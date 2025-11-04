@@ -40,5 +40,8 @@ TOPLEVEL = tb
 # MODULE is the basename of the Python test file
 MODULE = test
 
+# Generate JUnit XML results file for CI
+COCOTB_RESULTS_FILE = results.xml
+
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
