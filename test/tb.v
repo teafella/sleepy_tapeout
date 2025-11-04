@@ -48,12 +48,12 @@ module tb;
         rst_n = 1;
         #10;
         
-        $display("=== Shift Register Test ===");
+        $display("=== Circular Shift Register Test ===");
         $display("After reset: Q[7:0] = %b", uo_out);
         $display("");
         
-        // Test 1: Shift in a 1, then zeros
-        $display("Test 1: Shifting in 1, then zeros");
+        // Test 1: Circular wrapping - inject a 1 and watch it wrap around
+        $display("Test 1: Testing circular wrapping - injecting 1");
         ui_in[0] = 1;
         #20;  // Wait for clock edge
         $display("Cycle 1: Input=1, Q[7:0] = %b (expected: 00000001)", uo_out);
@@ -80,12 +80,70 @@ module tb;
         #20;
         $display("Cycle 8: Input=0, Q[7:0] = %b (expected: 10000000)", uo_out);
         
+        // Now test wrapping: bit 7 should wrap to bit 0
         #20;
-        $display("Cycle 9: Input=0, Q[7:0] = %b (expected: 00000000)", uo_out);
+        $display("Cycle 9: Input=0, Q[7:0] = %b (expected: 00000001 - bit 7 wrapped!)", uo_out);
+        if (uo_out == 8'b00000001) begin
+            $display("PASS: Bit 7 wrapped to bit 0!");
+        end else begin
+            $display("FAIL: Expected wrap, got %b", uo_out);
+        end
+        
+        #20;
+        $display("Cycle 10: Input=0, Q[7:0] = %b (expected: 00000010)", uo_out);
         $display("");
         
-        // Test 2: Shift in a pattern 10110110
-        $display("Test 2: Shifting in pattern 10110110");
+        // Test 2: Test multiple wraps
+        $display("Test 2: Testing multiple wraps");
+        rst_n = 0;
+        #20;
+        rst_n = 1;
+        #10;
+        
+        // Inject a 1 and watch it wrap multiple times
+        ui_in[0] = 1;
+        #20;
+        $display("Cycle 1: Input=1, Q[7:0] = %b (bit at position 0)", uo_out);
+        
+        ui_in[0] = 0;
+        // Wait 7 cycles to get it to bit 7 (positions 1-7)
+        #140;  // 7 cycles * 20ns
+        $display("After 7 more shifts: Q[7:0] = %b (should be at bit 7: 10000000)", uo_out);
+        if (uo_out == 8'b10000000) begin
+            $display("PASS: Bit reached position 7");
+        end else begin
+            $display("FAIL: Expected 10000000, got %b", uo_out);
+        end
+        
+        // Now it should wrap to position 0
+        #20;
+        $display("After wrap: Q[7:0] = %b (should be 00000001 - wrapped to position 0)", uo_out);
+        if (uo_out == 8'b00000001) begin
+            $display("PASS: Bit wrapped to position 0");
+        end else begin
+            $display("FAIL: Expected 00000001, got %b", uo_out);
+        end
+        
+        // Continue and it should wrap again after 7 more cycles (positions 1-7)
+        #140;  // 7 more cycles (from position 0 to position 7)
+        $display("After 7 more shifts: Q[7:0] = %b (should be at bit 7: 10000000 again)", uo_out);
+        if (uo_out == 8'b10000000) begin
+            $display("PASS: Bit reached position 7 again");
+        end else begin
+            $display("FAIL: Expected 10000000, got %b", uo_out);
+        end
+        
+        #20;
+        $display("After second wrap: Q[7:0] = %b (should be 00000001 - wrapped again)", uo_out);
+        if (uo_out == 8'b00000001) begin
+            $display("PASS: Bit wrapped to position 0 again");
+        end else begin
+            $display("FAIL: Expected 00000001, got %b", uo_out);
+        end
+        $display("");
+        
+        // Test 3: Shift in a pattern 10110110
+        $display("Test 3: Shifting in pattern 10110110");
         rst_n = 0;
         #20;
         rst_n = 1;
@@ -132,8 +190,8 @@ module tb;
         end
         $display("");
         
-        // Test 3: Reset test
-        $display("Test 3: Testing reset functionality");
+        // Test 4: Reset test
+        $display("Test 4: Testing reset functionality");
         rst_n = 0;
         #20;
         $display("After reset: Q[7:0] = %b (expected: 00000000)", uo_out);
