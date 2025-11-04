@@ -7,7 +7,7 @@
  * - uo[0] (OUT) is an output
  */
 
-module tt_um_user_module(
+module user_module(
     input wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,  // Dedicated outputs
     input wire [7:0] uio_in,   // IOs: Input path
