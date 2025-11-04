@@ -8,6 +8,7 @@ module tb;
     // Clock generation
     reg clk;
     reg rst_n;
+    reg ena;
     
     // I/O signals
     reg [7:0] ui_in;
@@ -23,6 +24,7 @@ module tb;
         .uio_in(uio_in),
         .uio_out(uio_out),
         .uio_oe(uio_oe),
+        .ena(ena),
         .clk(clk),
         .rst_n(rst_n)
     );
@@ -37,6 +39,7 @@ module tb;
     initial begin
         // Initialize
         rst_n = 0;
+        ena = 1;
         ui_in = 8'h00;
         uio_in = 8'h00;
         

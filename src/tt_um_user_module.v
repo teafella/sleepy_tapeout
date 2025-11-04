@@ -13,6 +13,7 @@ module tt_um_user_module(
     input wire [7:0] uio_in,   // IOs: Input path
     output wire [7:0] uio_out, // IOs: Output path
     output wire [7:0] uio_oe,  // IOs: Enable path (active high: 0=input, 1=output)
+    input wire ena,            // Enable
     input wire clk,            // Clock
     input wire rst_n           // Reset (active low)
 );
