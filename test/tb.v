@@ -19,7 +19,7 @@ module tb;
     wire [7:0] uio_oe;
     
     // Instantiate the design under test
-    tt_um_user_module dut (
+    tt_um_sleepy_module dut (
         .ui_in(ui_in),
         .uo_out(uo_out),
         .uio_in(uio_in),
