@@ -5,8 +5,8 @@
 iverilog -o sim -I../src ../src/tt_um_user_module.v tb.v
 vvp sim
 
-# View waveforms with GTKWave (if installed)
-if command -v gtkwave &> /dev/null; then
-    gtkwave tb.vcd
-fi
+# View waveforms with Surfer (if installed)
+# if command -v surfer &> /dev/null; then
+#     surfer tb.vcd
+# fi
 

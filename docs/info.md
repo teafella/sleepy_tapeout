@@ -21,13 +21,22 @@ You can also include images in this folder and reference them in the markdown. E
 - Direction set by `uio_oe` (0=input, 1=output)
 - Used for SPI, I2C, UART, or custom MCU communication
 
+## Inspiration
+
+This project was inspired by [this video](https://www.youtube.com/watch?v=s9HKXLPiX0w).
+
 ## How it works
-You take a nap and everrythig is good.
-Explain how your project works
+This is a simple step sequencer using an 8-step circular shift register:
+- Each button press (clock) adds a "1" to the pattern
+- The pattern circulates through 8 steps
+- When a "1" reaches position 0, it triggers the drum output (decimal point on 7-segment display)
+- Use reset to clear the pattern and start over
 
 ## How to test
-Put in garbage, doen.
-Explain how to use your project
+1. Press the button (clock) to add steps to your pattern - each press adds a "1"
+2. The decimal point on the 7-segment display will flash when a trigger occurs
+3. Use reset to clear the pattern
+4. Try different patterns by pressing the button in different rhythms
 
 ## External hardware
 Speaker output

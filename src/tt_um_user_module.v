@@ -1,11 +1,12 @@
 /*
  * Top-level user module for Tiny Tapeout
  * 
- * This module implements an 8-cell circular shift register (ring buffer).
- * Based on your pinout in info.yaml:
- * - ui[0] (A) is the data input (enters at position 0)
- * - uo[7:0] are the 8 register outputs
+ * This module implements an 8-cell circular shift register (ring buffer)
+ * with drum trigger output to segment display dot.
+ * - clk (button press) shifts in a "1" into the pattern
+ * - uo[7] is the drum trigger output (dot segment - high when position 0 contains a 1)
  * - Data shifts right, and bit 7 wraps around to bit 0
+ * - Each 1 in the buffer triggers the output once per cycle through position 0
  */
 
 module tt_um_user_module(
@@ -19,25 +20,30 @@ module tt_um_user_module(
     input wire rst_n           // Reset (active low)
 );
 
-    // Internal register for the circular shift register stages
+    // Internal register for the circular shift register
     reg [7:0] shift_reg;
     
-    // 8-cell circular shift register: Data shifts right, and bit 7 wraps to bit 0
-    // External input (ui_in[0]) can be used to inject new data
+    // Circular shift register: Data shifts right, bit 7 wraps to bit 0
+    // Each clock pulse (button press) shifts in a "1"
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // Active-low reset: clear all bits
             shift_reg <= 8'b0;
         end else begin
-            // Circular shift: bit 7 wraps to bit 0
-            // External input can inject new data (OR with wrapped bit) or replace it
-            // Using OR so external input can inject a 1, and wrapped bit also wraps
-            shift_reg <= {shift_reg[6:0], shift_reg[7] | ui_in[0]};
+            // Circular shift - each button press injects a "1"
+            shift_reg <= {shift_reg[6:0], shift_reg[7] | 1'b1};
         end
     end
     
-    // Output all 8 register bits
-    assign uo_out = shift_reg;
+    // Generate half-clock-period trigger pulses
+    // When shift_reg[0] is HIGH, output is HIGH only when clock is HIGH
+    // This creates 10ns pulses (half of 20ns clock period)
+    // Consecutive "1"s will create separate rising edges
+    // Output to dot segment (bit 7) of 7-segment display
+    assign uo_out[7] = shift_reg[0] & clk;
+    
+    // Set other outputs to 0
+    assign uo_out[6:0] = 7'b0;
     
     // Configure IOs as inputs (all zeros means input mode)
     assign uio_oe = 8'b0;

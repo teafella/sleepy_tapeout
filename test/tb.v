@@ -1,6 +1,6 @@
 /*
- * Testbench for 8-cell shift register
- * This testbench verifies the shift register functionality
+ * Testbench for drum trigger module
+ * This testbench verifies the circular shift register and drum trigger functionality
  */
 
 module tb;
@@ -16,6 +16,18 @@ module tb;
     reg [7:0] uio_in;
     wire [7:0] uio_out;
     wire [7:0] uio_oe;
+    
+    // Trigger counting
+    integer trigger_count;
+    integer rising_edge_count;
+    reg prev_trigger;  // Track previous trigger state for edge detection
+    
+    // Monitor rising edges in real-time
+    always @(posedge uo_out[7]) begin
+        if (rst_n) begin
+            rising_edge_count = rising_edge_count + 1;
+        end
+    end
     
     // Instantiate the design under test
     tt_um_user_module dut (
@@ -42,163 +54,230 @@ module tb;
         ena = 1;
         ui_in = 8'h00;
         uio_in = 8'h00;
+        trigger_count = 0;
+        rising_edge_count = 0;
         
         // Wait a bit, then release reset
         #25;
         rst_n = 1;
         #10;
         
-        $display("=== Circular Shift Register Test ===");
-        $display("After reset: Q[7:0] = %b", uo_out);
+        $display("=== Drum Trigger Module Test ===");
+        $display("After reset: trigger = %b", uo_out[7]);
         $display("");
         
-        // Test 1: Circular wrapping - inject a 1 and watch it wrap around
-        $display("Test 1: Testing circular wrapping - injecting 1");
-        ui_in[0] = 1;
-        #20;  // Wait for clock edge
-        $display("Cycle 1: Input=1, Q[7:0] = %b (expected: 00000001)", uo_out);
-        
-        ui_in[0] = 0;
-        #20;
-        $display("Cycle 2: Input=0, Q[7:0] = %b (expected: 00000010)", uo_out);
-        
-        #20;
-        $display("Cycle 3: Input=0, Q[7:0] = %b (expected: 00000100)", uo_out);
-        
-        #20;
-        $display("Cycle 4: Input=0, Q[7:0] = %b (expected: 00001000)", uo_out);
-        
-        #20;
-        $display("Cycle 5: Input=0, Q[7:0] = %b (expected: 00010000)", uo_out);
-        
-        #20;
-        $display("Cycle 6: Input=0, Q[7:0] = %b (expected: 00100000)", uo_out);
-        
-        #20;
-        $display("Cycle 7: Input=0, Q[7:0] = %b (expected: 01000000)", uo_out);
-        
-        #20;
-        $display("Cycle 8: Input=0, Q[7:0] = %b (expected: 10000000)", uo_out);
-        
-        // Now test wrapping: bit 7 should wrap to bit 0
-        #20;
-        $display("Cycle 9: Input=0, Q[7:0] = %b (expected: 00000001 - bit 7 wrapped!)", uo_out);
-        if (uo_out == 8'b00000001) begin
-            $display("PASS: Bit 7 wrapped to bit 0!");
-        end else begin
-            $display("FAIL: Expected wrap, got %b", uo_out);
-        end
-        
-        #20;
-        $display("Cycle 10: Input=0, Q[7:0] = %b (expected: 00000010)", uo_out);
-        $display("");
-        
-        // Test 2: Test multiple wraps
-        $display("Test 2: Testing multiple wraps");
+        // Test 1: Shift in pattern 1101 - should produce 3 triggers
+        $display("Test 1: Shifting in pattern 1101 - expecting 3 triggers");
         rst_n = 0;
         #20;
         rst_n = 1;
         #10;
+        trigger_count = 0;
         
-        // Inject a 1 and watch it wrap multiple times
+        // Shift in 1
         ui_in[0] = 1;
-        #20;
-        $display("Cycle 1: Input=1, Q[7:0] = %b (bit at position 0)", uo_out);
+        @(posedge clk);  // Wait for 1 clock edge (shift happens)
+        #1;  // Small delay to sample during clock high phase
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 1: Input=1, Trigger=%b, Count=%0d", uo_out[7], trigger_count);
         
+        // Shift in 0
         ui_in[0] = 0;
-        // Wait 7 cycles to get it to bit 7 (positions 1-7)
-        #140;  // 7 cycles * 20ns
-        $display("After 7 more shifts: Q[7:0] = %b (should be at bit 7: 10000000)", uo_out);
-        if (uo_out == 8'b10000000) begin
-            $display("PASS: Bit reached position 7");
-        end else begin
-            $display("FAIL: Expected 10000000, got %b", uo_out);
-        end
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 2: Input=0, Trigger=%b, Count=%0d", uo_out[7], trigger_count);
         
-        // Now it should wrap to position 0
-        #20;
-        $display("After wrap: Q[7:0] = %b (should be 00000001 - wrapped to position 0)", uo_out);
-        if (uo_out == 8'b00000001) begin
-            $display("PASS: Bit wrapped to position 0");
-        end else begin
-            $display("FAIL: Expected 00000001, got %b", uo_out);
-        end
+        // Shift in 1
+        ui_in[0] = 1;
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 3: Input=1, Trigger=%b, Count=%0d", uo_out[7], trigger_count);
         
-        // Continue and it should wrap again after 7 more cycles (positions 1-7)
-        #140;  // 7 more cycles (from position 0 to position 7)
-        $display("After 7 more shifts: Q[7:0] = %b (should be at bit 7: 10000000 again)", uo_out);
-        if (uo_out == 8'b10000000) begin
-            $display("PASS: Bit reached position 7 again");
-        end else begin
-            $display("FAIL: Expected 10000000, got %b", uo_out);
-        end
+        // Shift in 1
+        ui_in[0] = 1;
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 4: Input=1, Trigger=%b, Count=%0d", uo_out[7], trigger_count);
         
-        #20;
-        $display("After second wrap: Q[7:0] = %b (should be 00000001 - wrapped again)", uo_out);
-        if (uo_out == 8'b00000001) begin
-            $display("PASS: Bit wrapped to position 0 again");
+        if (trigger_count == 3) begin
+            $display("PASS: Got 3 triggers for pattern 1101");
         end else begin
-            $display("FAIL: Expected 00000001, got %b", uo_out);
+            $display("FAIL: Expected 3 triggers, got %0d", trigger_count);
         end
         $display("");
         
-        // Test 3: Shift in a pattern 10110110
-        $display("Test 3: Shifting in pattern 10110110");
+        // Test 2: Continue shifting to test buffer circulation
+        $display("Test 2: Testing trigger circulation in buffer");
+        ui_in[0] = 0;
+        trigger_count = 0;
+        
+        // Shift 4 more times (no new 1s, so no triggers at position 0)
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 5: Input=0, Trigger=%b", uo_out[7]);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 6: Input=0, Trigger=%b", uo_out[7]);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 7: Input=0, Trigger=%b", uo_out[7]);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Shift 8: Input=0, Trigger=%b", uo_out[7]);
+        
+        $display("After 8 shifts total, pattern is loaded into 8-bit buffer");
+        $display("Expecting triggers to repeat as pattern circulates...");
+        $display("");
+        
+        // Now the pattern should repeat - we should see 3 more triggers in the next 8 cycles
+        trigger_count = 0;
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 9: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 10: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 11: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 12: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 13: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 14: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 15: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        @(posedge clk);
+        #1;
+        if (uo_out[7]) trigger_count = trigger_count + 1;
+        $display("Cycle 16: Trigger=%b, Count=%0d", uo_out[7], trigger_count);
+        
+        if (trigger_count == 3) begin
+            $display("PASS: Got 3 triggers in second cycle through buffer");
+        end else begin
+            $display("FAIL: Expected 3 triggers, got %0d", trigger_count);
+        end
+        $display("");
+        
+        // Test 3: Test consecutive 1s - pattern 11110000
+        $display("Test 3: Testing consecutive triggers - pattern 11110000");
         rst_n = 0;
         #20;
         rst_n = 1;
         #10;
+        trigger_count = 0;
         
-        ui_in[0] = 1;  // bit 0
-        #20;
-        $display("Cycle 1: Input=1, Q[7:0] = %b", uo_out);
+        // Shift in 11110000
+        ui_in[0] = 1; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 1; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 1; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 1; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
         
-        ui_in[0] = 0;  // bit 1
-        #20;
-        $display("Cycle 2: Input=0, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 1;  // bit 2
-        #20;
-        $display("Cycle 3: Input=1, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 1;  // bit 3
-        #20;
-        $display("Cycle 4: Input=1, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 0;  // bit 4
-        #20;
-        $display("Cycle 5: Input=0, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 1;  // bit 5
-        #20;
-        $display("Cycle 6: Input=1, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 1;  // bit 6
-        #20;
-        $display("Cycle 7: Input=1, Q[7:0] = %b", uo_out);
-        
-        ui_in[0] = 0;  // bit 7
-        #20;
-        $display("Cycle 8: Input=0, Q[7:0] = %b (expected: 10110110)", uo_out);
-        $display("Expected pattern: 10110110");
-        
-        // Verify final result
-        if (uo_out == 8'b10110110) begin
-            $display("PASS: Pattern matches expected value!");
+        $display("Trigger count for 11110000: %0d", trigger_count);
+        if (trigger_count == 4) begin
+            $display("PASS: Got 4 consecutive triggers");
         end else begin
-            $display("FAIL: Pattern mismatch! Expected 10110110, got %b", uo_out);
+            $display("FAIL: Expected 4 triggers, got %0d", trigger_count);
         end
         $display("");
         
-        // Test 4: Reset test
-        $display("Test 4: Testing reset functionality");
+        // Test 4: Single trigger test
+        $display("Test 4: Testing single trigger - pattern 10000000");
         rst_n = 0;
         #20;
-        $display("After reset: Q[7:0] = %b (expected: 00000000)", uo_out);
-        if (uo_out == 8'b00000000) begin
+        rst_n = 1;
+        #10;
+        trigger_count = 0;
+        
+        ui_in[0] = 1; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        ui_in[0] = 0; @(posedge clk); #1; if (uo_out[7]) trigger_count = trigger_count + 1;
+        
+        $display("Trigger count for 10000000: %0d", trigger_count);
+        if (trigger_count == 1) begin
+            $display("PASS: Got 1 trigger");
+        end else begin
+            $display("FAIL: Expected 1 trigger, got %0d", trigger_count);
+        end
+        $display("");
+        
+        // Test 5: Verify rising edges for consecutive 1s
+        $display("Test 5: Verifying RISING EDGES for consecutive 1s - pattern 1111");
+        rst_n = 0;
+        #20;
+        rst_n = 1;
+        rising_edge_count = 0;  // Reset counter
+        #10;
+        
+        // Shift in four consecutive 1s
+        ui_in[0] = 1; #20;
+        $display("Shift 1: Input=1, Rising edges so far=%0d", rising_edge_count);
+        
+        ui_in[0] = 1; #20;
+        $display("Shift 2: Input=1, Rising edges so far=%0d", rising_edge_count);
+        
+        ui_in[0] = 1; #20;
+        $display("Shift 3: Input=1, Rising edges so far=%0d", rising_edge_count);
+        
+        ui_in[0] = 1; #20;
+        $display("Shift 4: Input=1, Rising edges so far=%0d", rising_edge_count);
+        
+        $display("Total rising edge count for 1111: %0d", rising_edge_count);
+        if (rising_edge_count == 4) begin
+            $display("PASS: Got 4 rising edges for 4 consecutive 1s!");
+        end else begin
+            $display("FAIL: Expected 4 rising edges, got %0d", rising_edge_count);
+        end
+        $display("");
+        
+        // Test 6: Reset test
+        $display("Test 6: Testing reset functionality");
+        rst_n = 0;
+        #20;
+        $display("After reset: trigger = %b (expected: 0)", uo_out[7]);
+        if (uo_out[7] == 0) begin
             $display("PASS: Reset works correctly!");
         end else begin
-            $display("FAIL: Reset failed! Expected 00000000, got %b", uo_out);
+            $display("FAIL: Reset failed! Expected 0, got %b", uo_out[7]);
         end
         
         #100;
