@@ -1,0 +1,36 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          pip install -r test/requirements.txt
+
+      - name: Run tests
+        working-directory: test
+        run: make
+
+      - name: Test Summary
+        uses: test-summary/action@v2.3
+        if: always()
+        with:
+          paths: test/results.xml
+
