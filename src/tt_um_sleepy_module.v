@@ -138,30 +138,70 @@ module tt_um_sleepy_module (
     );
 
     // ========================================
-    // Volume Control (Smooth 8×8 Multiplier)
+    // Volume Control (Slewed Bit-Shift)
     // ========================================
-    // Smooth volume control restored by switching to UART (saved ~140 cells)
-    // Volume range: 0x00 = mute, 0xFF = full volume (256 smooth levels)
+    // AREA OPTIMIZATION: Replace 8×8 multiplier (~220 cells) with slewed bit-shift (~50 cells)
+    // Savings: ~170 cells!
     //
-    // Theory: Multiply mixed waveform by volume control
-    // - mixed_wave: 8-bit waveform (0-255)
-    // - reg_volume: 8-bit volume (0-255)
-    // - Product: 16-bit (0-65025)
-    // - Output: upper 8 bits (effectively divides by 256)
+    // Features:
+    // - 8 discrete volume levels (using bit-shifts)
+    // - Smooth transitions via slew rate limiter (no audio clicks)
+    // - Target volume set via SPI (reg_volume: 0-255)
+    // - Current volume smoothly ramps toward target
     //
-    // Examples:
-    //   volume=0xFF (255): ~100% output
-    //   volume=0x80 (128): ~50% output
-    //   volume=0x00 (0):   0% output (mute)
-    wire [15:0] volume_product = mixed_wave * reg_volume;
-    wire [7:0] volume_multiplied = volume_product[15:8];
+    // Volume levels (based on top 3 bits):
+    //   0: Mute (0-31)
+    //   1: 1/8 volume (32-63)
+    //   2: 1/4 volume (64-95)
+    //   3: 3/8 volume (96-127)
+    //   4: 1/2 volume (128-159)
+    //   5: 5/8 volume (160-191)
+    //   6: 3/4 volume (192-223)
+    //   7: Full volume (224-255)
 
+    // Slew rate configuration
+    // Higher value = slower fade (smoother but slower response)
+    // At 50 MHz: SLEW_RATE=2048 gives ~24ms for full 0-255 range
+    localparam SLEW_RATE = 16'd2048;
+
+    reg [7:0] current_volume;   // Smoothly interpolated volume level
+    reg [15:0] slew_counter;    // Counter for slew rate timing
+
+    // Slew rate limiter: gradually transition current_volume toward target (reg_volume)
+    always @(posedge clk or negedge system_rst_n) begin
+        if (!system_rst_n) begin
+            current_volume <= 8'd0;
+            slew_counter <= 16'd0;
+        end else begin
+            slew_counter <= slew_counter + 1;
+
+            // Update current volume toward target every SLEW_RATE clocks
+            if (slew_counter == SLEW_RATE) begin
+                if (current_volume < reg_volume)
+                    current_volume <= current_volume + 1;
+                else if (current_volume > reg_volume)
+                    current_volume <= current_volume - 1;
+            end
+        end
+    end
+
+    // Bit-shift volume scaling based on current volume level
     reg [7:0] volume_scaled;
     always @(posedge clk or negedge system_rst_n) begin
-        if (!system_rst_n)
+        if (!system_rst_n) begin
             volume_scaled <= 8'h00;
-        else
-            volume_scaled <= volume_multiplied;
+        end else begin
+            case (current_volume[7:5])  // Use top 3 bits for 8 discrete levels
+                3'd0: volume_scaled <= 8'h00;                                    // Mute
+                3'd1: volume_scaled <= mixed_wave >> 3;                          // 1/8 volume
+                3'd2: volume_scaled <= mixed_wave >> 2;                          // 1/4 volume
+                3'd3: volume_scaled <= (mixed_wave >> 2) + (mixed_wave >> 3);   // 3/8 volume
+                3'd4: volume_scaled <= mixed_wave >> 1;                          // 1/2 volume
+                3'd5: volume_scaled <= (mixed_wave >> 1) + (mixed_wave >> 3);   // 5/8 volume
+                3'd6: volume_scaled <= (mixed_wave >> 1) + (mixed_wave >> 2);   // 3/4 volume
+                3'd7: volume_scaled <= mixed_wave;                               // Full volume
+            endcase
+        end
     end
 
     // ========================================

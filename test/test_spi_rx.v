@@ -110,31 +110,31 @@ module test_spi_rx;
             $display("✗ FAIL: Duty cycle = 0x%02X (expected 0x40)", reg_duty);
         end
 
-        $display("\n--- Test 4: Write Volume Register (Smooth Control) ---");
-        spi_write_register(8'h06, 8'h80);  // Set volume to 50%
+        $display("\n--- Test 4: Write Volume Register (Slewed Bit-Shift) ---");
+        spi_write_register(8'h06, 8'h80);  // Set volume target to 50%
         #2000;
         if (reg_volume == 8'h80) begin
-            $display("✓ PASS: Volume register = 0x%02X (128 = 50%%)", reg_volume);
+            $display("✓ PASS: Volume register = 0x%02X (128 = 1/2 vol target)", reg_volume);
         end else begin
             $display("✗ FAIL: Volume register = 0x%02X (expected 0x80)", reg_volume);
         end
 
-        $display("\n--- Test 5: Test Multiple Volume Levels ---");
+        $display("\n--- Test 5: Test Multiple Volume Target Levels ---");
         spi_write_register(8'h06, 8'h00);  // Mute
         #2000;
-        if (reg_volume == 8'h00) $display("✓ PASS: Volume = 0x00 (mute)");
+        if (reg_volume == 8'h00) $display("✓ PASS: Volume target = 0x00 (mute)");
 
-        spi_write_register(8'h06, 8'h40);  // 25%
+        spi_write_register(8'h06, 8'h40);  // 1/4 volume
         #2000;
-        if (reg_volume == 8'h40) $display("✓ PASS: Volume = 0x40 (25%%)");
+        if (reg_volume == 8'h40) $display("✓ PASS: Volume target = 0x40 (1/4 vol)");
 
-        spi_write_register(8'h06, 8'hC0);  // 75%
+        spi_write_register(8'h06, 8'hC0);  // 3/4 volume
         #2000;
-        if (reg_volume == 8'hC0) $display("✓ PASS: Volume = 0xC0 (75%%)");
+        if (reg_volume == 8'hC0) $display("✓ PASS: Volume target = 0xC0 (3/4 vol)");
 
         spi_write_register(8'h06, 8'hFF);  // Full
         #2000;
-        if (reg_volume == 8'hFF) $display("✓ PASS: Volume = 0xFF (100%%)");
+        if (reg_volume == 8'hFF) $display("✓ PASS: Volume target = 0xFF (full)");
 
         $display("\n--- Test 6: Burst Write (Multiple Registers) ---");
         // Start transaction
