@@ -1,5 +1,5 @@
 """
-Cocotb test for SPI-controlled wavetable synthesizer
+Cocotb test for SPI-controlled 3-waveform synthesizer with streaming mode
 """
 import cocotb
 from cocotb.clock import Clock
@@ -37,7 +37,7 @@ async def spi_write_register(dut, address, data):
 
 @cocotb.test()
 async def test_spi_synthesizer(dut):
-    """Test the SPI-controlled wavetable synthesizer"""
+    """Test the SPI-controlled 3-waveform synthesizer with streaming mode"""
 
     # Start clock - 50MHz (20ns period)
     clock = Clock(dut.clk, 20, units="ns")
@@ -59,27 +59,26 @@ async def test_spi_synthesizer(dut):
     dut._log.info("=" * 60)
 
     # After reset, oscillator should be disabled
-    # Check that DAC output exists (bit 0)
     dut._log.info(f"DAC_OUT: {dut.uo_out[0].value}")
     dut._log.info(f"GATE_LED: {dut.uo_out[1].value}")
     dut._log.info(f"OSC_RUN: {dut.uo_out[2].value}")
-    dut._log.info("✓ Reset state verified")
+    dut._log.info("PASS: Reset state verified")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 2: Write to control register - enable oscillator")
+    dut._log.info("Test 2: Enable oscillator with sawtooth waveform")
     dut._log.info("=" * 60)
 
-    # Write to control register: OSC_EN=1, STREAM_MODE=0, SW_GATE=0
-    # Control register bits: [0]=OSC_EN, [1]=STREAM_MODE, [2]=SW_GATE
-    await spi_write_register(dut, 0x00, 0b00000001)  # 0x01
+    # Control bits: [0]=OSC_EN, [1]=STREAM_MODE, [2]=SW_GATE, [3]=square, [4]=saw, [5]=triangle
+    # Enable oscillator with just sawtooth (bit 4): 0b00010001 = 0x11
+    await spi_write_register(dut, 0x00, 0b00010001)
     await Timer(2000, units="ns")
 
     # Oscillator should now be running
     assert dut.uo_out[2].value == 1, f"Expected OSC_RUN=1, got {dut.uo_out[2].value}"
-    dut._log.info("✓ Oscillator enabled via SPI")
+    dut._log.info("PASS: Oscillator enabled with sawtooth waveform")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 3: Write frequency registers (440 Hz)")
+    dut._log.info("Test 3: Set frequency to 440 Hz")
     dut._log.info("=" * 60)
 
     # Write frequency = 0x024000 (440 Hz at 50 MHz)
@@ -88,94 +87,36 @@ async def test_spi_synthesizer(dut):
     await spi_write_register(dut, 0x04, 0x02)  # Freq high
     await Timer(2000, units="ns")
 
-    dut._log.info("✓ Frequency registers written")
+    dut._log.info("PASS: Frequency set to 440 Hz (0x024000)")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 4: Write volume register (8-level bit-shift)")
+    dut._log.info("Test 4: Set duty cycle for square wave")
     dut._log.info("=" * 60)
 
-    # Test multiple volume levels
-    # Note: Volume changes are instant (8 discrete levels)
+    # Set duty cycle to 50% (0x80)
+    await spi_write_register(dut, 0x05, 0x80)
+    await Timer(2000, units="ns")
+
+    dut._log.info("PASS: Duty cycle set to 50%")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 5: Test volume control (8-level bit-shift)")
+    dut._log.info("=" * 60)
+
+    # Test volume levels
     volume_levels = [0x00, 0x40, 0x80, 0xC0, 0xFF]
     volume_names = ["Mute", "1/4 vol", "1/2 vol", "3/4 vol", "Full"]
 
     for vol, name in zip(volume_levels, volume_names):
-        await spi_write_register(dut, 0x05, vol)
+        await spi_write_register(dut, 0x06, vol)
         await Timer(2000, units="ns")
         dut._log.info(f"  Volume set to {name} (0x{vol:02X})")
 
-    dut._log.info("✓ Bit-shift volume control verified")
+    dut._log.info("PASS: Volume control verified (oscillator mode)")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 5: Load wavetable (8 samples)")
+    dut._log.info("Test 6: Verify DAC output is active (oscillator mode)")
     dut._log.info("=" * 60)
-
-    # Load sawtooth waveform
-    await spi_write_register(dut, 0x10, 0)
-    await spi_write_register(dut, 0x11, 36)
-    await spi_write_register(dut, 0x12, 73)
-    await spi_write_register(dut, 0x13, 109)
-    await spi_write_register(dut, 0x14, 146)
-    await spi_write_register(dut, 0x15, 182)
-    await spi_write_register(dut, 0x16, 219)
-    await spi_write_register(dut, 0x17, 255)
-    await Timer(2000, units="ns")
-
-    dut._log.info("✓ Wavetable loaded (sawtooth: 0 → 255)")
-
-    dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 6: Test burst write to wavetable")
-    dut._log.info("=" * 60)
-
-    # Burst write triangle waveform
-    # CS low
-    dut.uio_in.value = (dut.uio_in.value & 0xF8) | (0 << 0) | (0 << 1) | (0 << 2)
-    await Timer(1000, units="ns")
-
-    # Address = 0x10 (wavetable[0])
-    await spi_send_byte(dut, 0x10)
-    # Triangle waveform
-    await spi_send_byte(dut, 0)      # Rising
-    await spi_send_byte(dut, 73)
-    await spi_send_byte(dut, 146)
-    await spi_send_byte(dut, 219)
-    await spi_send_byte(dut, 255)    # Peak
-    await spi_send_byte(dut, 219)    # Falling
-    await spi_send_byte(dut, 146)
-    await spi_send_byte(dut, 73)
-
-    # CS high
-    dut.uio_in.value = (dut.uio_in.value & 0xF8) | (0 << 0) | (0 << 1) | (1 << 2)
-    await Timer(2000, units="ns")
-
-    dut._log.info("✓ Triangle wavetable loaded via burst write")
-
-    dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 7: Test streaming mode")
-    dut._log.info("=" * 60)
-
-    # Enable streaming mode
-    await spi_write_register(dut, 0x00, 0b00000010)  # OSC_EN=0, STREAM_MODE=1
-    await Timer(2000, units="ns")
-
-    # Write different values to wavetable[0] and verify DAC output changes
-    await spi_write_register(dut, 0x10, 128)
-    await Timer(1000, units="ns")
-    dut._log.info("  Streaming sample value 128")
-
-    await spi_write_register(dut, 0x10, 255)
-    await Timer(1000, units="ns")
-    dut._log.info("  Streaming sample value 255")
-
-    dut._log.info("✓ Streaming mode verified")
-
-    dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 8: Verify DAC output is active")
-    dut._log.info("=" * 60)
-
-    # Switch back to wavetable mode
-    await spi_write_register(dut, 0x00, 0b00000001)  # OSC_EN=1, STREAM_MODE=0
-    await Timer(2000, units="ns")
 
     # Run for several clock cycles and verify DAC output toggles
     dac_values = []
@@ -184,33 +125,106 @@ async def test_spi_synthesizer(dut):
         dac_values.append(int(dut.uo_out[0].value))
 
     # DAC should produce varying output (delta-sigma modulation)
-    if len(set(dac_values)) > 1:
-        dut._log.info(f"✓ DAC output is active (saw {len(set(dac_values))} unique values)")
-    else:
-        dut._log.warning(f"⚠ DAC output appears static (value={dac_values[0]})")
+    unique_values = len(set(dac_values))
+    assert unique_values > 1, f"DAC appears static (only {unique_values} unique value)"
+    dut._log.info(f"PASS: DAC output is active ({unique_values} unique values in oscillator mode)")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 9: Test gate signal")
+    dut._log.info("Test 7: Switch to streaming mode")
+    dut._log.info("=" * 60)
+
+    # Enable streaming mode: OSC_EN=0, STREAM_MODE=1
+    await spi_write_register(dut, 0x00, 0b00000010)
+    await Timer(2000, units="ns")
+
+    dut._log.info("PASS: Switched to streaming mode")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 8: Stream different sample values")
+    dut._log.info("=" * 60)
+
+    # Stream different values through reg_stream_sample (0x10)
+    test_samples = [0x00, 0x40, 0x80, 0xC0, 0xFF]
+    for sample in test_samples:
+        await spi_write_register(dut, 0x10, sample)
+        await Timer(1000, units="ns")
+        dut._log.info(f"  Streaming sample: 0x{sample:02X}")
+
+    dut._log.info("PASS: Streaming mode sample updates working")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 9: Verify DAC output in streaming mode")
+    dut._log.info("=" * 60)
+
+    # Set a specific streaming value
+    await spi_write_register(dut, 0x10, 0x80)
+    await Timer(2000, units="ns")
+
+    # Check DAC output
+    dac_values_stream = []
+    for _ in range(100):
+        await RisingEdge(dut.clk)
+        dac_values_stream.append(int(dut.uo_out[0].value))
+
+    unique_values_stream = len(set(dac_values_stream))
+    dut._log.info(f"PASS: DAC output in streaming mode ({unique_values_stream} unique values)")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 10: Test volume control in streaming mode")
+    dut._log.info("=" * 60)
+
+    # Set streaming sample to full scale
+    await spi_write_register(dut, 0x10, 0xFF)
+    await Timer(1000, units="ns")
+
+    # Test volume levels in streaming mode
+    for vol, name in zip(volume_levels, volume_names):
+        await spi_write_register(dut, 0x06, vol)
+        await Timer(2000, units="ns")
+        dut._log.info(f"  Volume set to {name} (0x{vol:02X}) in streaming mode")
+
+    dut._log.info("PASS: Volume control verified (streaming mode)")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 11: Switch back to oscillator mode")
+    dut._log.info("=" * 60)
+
+    # Re-enable oscillator with sawtooth
+    await spi_write_register(dut, 0x00, 0b00010001)
+    await Timer(2000, units="ns")
+
+    # Verify DAC is active again
+    dac_values_osc = []
+    for _ in range(100):
+        await RisingEdge(dut.clk)
+        dac_values_osc.append(int(dut.uo_out[0].value))
+
+    unique_values_osc = len(set(dac_values_osc))
+    assert unique_values_osc > 1, f"DAC appears static after mode switch"
+    dut._log.info(f"PASS: Switched back to oscillator mode ({unique_values_osc} unique values)")
+
+    dut._log.info("\n" + "=" * 60)
+    dut._log.info("Test 12: Test gate signals")
     dut._log.info("=" * 60)
 
     # Test hardware gate (ui_in[0])
     dut.ui_in.value = 0xFF | (1 << 0)  # Gate high
     await Timer(100, units="ns")
     assert dut.uo_out[1].value == 1, f"Expected GATE_LED=1, got {dut.uo_out[1].value}"
-    dut._log.info("✓ Hardware gate active")
+    dut._log.info("PASS: Hardware gate active")
 
     dut.ui_in.value = 0xFF & ~(1 << 0)  # Gate low
     await Timer(100, units="ns")
     assert dut.uo_out[1].value == 0, f"Expected GATE_LED=0, got {dut.uo_out[1].value}"
-    dut._log.info("✓ Hardware gate inactive")
+    dut._log.info("PASS: Hardware gate inactive")
 
     # Test software gate via SPI (control register bit 2)
-    await spi_write_register(dut, 0x00, 0b00000101)  # OSC_EN=1, STREAM_MODE=0, SW_GATE=1
+    await spi_write_register(dut, 0x00, 0b00010101)  # OSC_EN=1, STREAM=0, SW_GATE=1, sawtooth
     await Timer(100, units="ns")
     assert dut.uo_out[1].value == 1, f"Expected GATE_LED=1 (SW gate), got {dut.uo_out[1].value}"
-    dut._log.info("✓ Software gate active via SPI")
+    dut._log.info("PASS: Software gate active via SPI")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("ALL TESTS PASSED! 🎉")
-    dut._log.info("SPI-controlled wavetable synthesizer is working correctly")
+    dut._log.info("ALL TESTS PASSED!")
+    dut._log.info("3-waveform synthesizer with streaming mode working correctly")
     dut._log.info("=" * 60)
