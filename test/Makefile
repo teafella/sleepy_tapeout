@@ -6,7 +6,7 @@ SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = tt_um_sleepy_module.v \
-                  i2c_slave.v \
+                  spi_rx_registers.v \
                   phase_accumulator.v \
                   waveform_generators.v \
                   waveform_mixer.v \
