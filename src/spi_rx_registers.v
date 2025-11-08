@@ -105,6 +105,14 @@ module spi_rx_registers (
             bit_count <= 0;
             shift_reg <= 0;
             address_reg <= 0;
+            // Initialize all registers on reset (required for synthesis)
+            reg_control <= 8'b00011100;     // OSC=0, STREAM=0, SW_GATE=0, all waveforms enabled
+            reg_freq_low <= 8'h00;
+            reg_freq_mid <= 8'h00;
+            reg_freq_high <= 8'h00;
+            reg_duty <= 8'h80;              // 50% duty cycle
+            reg_volume <= 8'hFF;            // Full volume by default
+            reg_stream_sample <= 8'h80;     // Middle value (128) for streaming
         end else begin
             // CS deasserted - return to idle
             if (cs) begin
@@ -181,16 +189,9 @@ module spi_rx_registers (
     endtask
 
     // ========================================
-    // Register Initialization (8 essential registers)
+    // Register Initialization
     // ========================================
-    initial begin
-        reg_control = 8'b00011100;     // OSC=0, STREAM=0, SW_GATE=0, all waveforms enabled
-        reg_freq_low = 8'h00;
-        reg_freq_mid = 8'h00;
-        reg_freq_high = 8'h00;
-        reg_duty = 8'h80;              // 50% duty cycle
-        reg_volume = 8'hFF;            // Full volume by default
-        reg_stream_sample = 8'h80;     // Middle value (128) for streaming
-    end
+    // NOTE: Registers are now initialized in the reset clause of the always block above
+    // initial blocks are not synthesizable for ASIC designs!
 
 endmodule
