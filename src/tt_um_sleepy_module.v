@@ -4,14 +4,16 @@
  * I2C-Controlled Waveform Generator with ADSR Envelope
  *
  * EXTREME AREA OPTIMIZATION for 1×1 tile fit:
- * - I2C slave interface for configuration (11 registers)
+ * - I2C slave interface for configuration (6 registers)
  * - Phase accumulator with 3 waveform generators (square, sawtooth, triangle)
  * - 3-channel waveform mixer with on/off enables
- * - ADSR envelope generator
- * - Amplitude modulator with on/off master control
  * - Delta-sigma DAC for 1-bit audio output
  *
- * Removed: sine wave, noise, individual gain controls
+ * Removed to fit in 1x1 tile:
+ * - ADSR envelope generator (~250 cells) - envelope shaping via I2C control
+ * - Amplitude modulator (~80 cells) - not needed without ADSR
+ * - Sine wave, noise generators
+ * - Individual gain controls
  *
  * TinyTapeout Pin Assignments:
  * - ui_in[0]: GATE (hardware gate trigger)
@@ -36,18 +38,13 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // I2C Slave Interface - Minimal Register Bank (11 registers)
+    // I2C Slave Interface - Minimal Register Bank (6 registers)
     // ========================================
     wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
-    wire [7:0] reg_attack;
-    wire [7:0] reg_decay;
-    wire [7:0] reg_sustain;
-    wire [7:0] reg_release;
-    wire [7:0] reg_amplitude;     // bit 0 only: 0=mute, 1=full
     wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
@@ -64,7 +61,6 @@ module tt_um_sleepy_module (
     // ========================================
     wire sda_out_i2c;
     wire sda_oe_i2c;
-    wire [2:0] adsr_state_for_status;
     wire osc_running;
 
     i2c_slave #(
@@ -76,21 +72,15 @@ module tt_um_sleepy_module (
         .sda_in(uio_in[0]),
         .sda_out(sda_out_i2c),
         .sda_oe(sda_oe_i2c),
-        // Minimal registers only (11 total)
+        // Minimal registers only (6 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
         .reg_duty(reg_duty),
-        .reg_attack(reg_attack),
-        .reg_decay(reg_decay),
-        .reg_sustain(reg_sustain),
-        .reg_release(reg_release),
-        .reg_amplitude(reg_amplitude),
         .reg_status(reg_status),
         // Status inputs
         .status_gate_active(gate),
-        .status_adsr_state(adsr_state_for_status),
         .status_osc_running(osc_running)
     );
 
@@ -151,45 +141,16 @@ module tt_um_sleepy_module (
     );
 
     // ========================================
-    // ADSR Envelope Generator
-    // ========================================
-    wire [7:0] envelope_value;
-
-    adsr_envelope adsr (
-        .clk(clk),
-        .rst_n(system_rst_n),
-        .gate(gate),
-        .attack_rate(reg_attack),
-        .decay_rate(reg_decay),
-        .sustain_level(reg_sustain),
-        .release_rate(reg_release),
-        .envelope_out(envelope_value),
-        .state_out(adsr_state_for_status)
-    );
-
-    // ========================================
-    // Amplitude Modulator
-    // ========================================
-    wire [7:0] modulated_out;
-
-    amplitude_modulator amp_mod (
-        .clk(clk),
-        .rst_n(system_rst_n),
-        .waveform_in(mixed_wave),
-        .envelope_value(envelope_value),
-        .master_amplitude(reg_amplitude),
-        .amplitude_out(modulated_out)
-    );
-
-    // ========================================
     // Delta-Sigma DAC (1-bit output)
     // ========================================
+    // ADSR and amplitude modulator removed to save area (~330 cells)
+    // Envelope shaping can be done externally via I2C waveform enable control
     wire dac_out;
 
     delta_sigma_dac dac (
         .clk(clk),
         .rst_n(system_rst_n),
-        .data_in(modulated_out),
+        .data_in(mixed_wave),  // Direct connection from mixer
         .dac_out(dac_out)
     );
 
@@ -198,7 +159,7 @@ module tt_um_sleepy_module (
     // ========================================
     assign uo_out[0] = dac_out;           // 1-bit audio output
     assign uo_out[1] = gate;              // Gate LED indicator
-    assign uo_out[2] = envelope_value[7]; // Envelope MSB (visualization)
+    assign uo_out[2] = osc_running;       // Oscillator running indicator
     assign uo_out[3] = phase[23];         // Sync pulse (phase MSB)
     assign uo_out[7:4] = 4'b0000;         // Reserved/unused outputs
 

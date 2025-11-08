@@ -1,13 +1,13 @@
 /*
- * Testbench for I2C Slave Interface
+ * Testbench for I2C Slave Interface (Minimal Version)
  *
- * This testbench validates:
+ * This testbench validates the minimal 6-register I2C interface:
  * 1. I2C protocol (START, STOP, ACK, NACK)
  * 2. Address matching
  * 3. Register write operations
  * 4. Register read operations
  * 5. Burst write and read
- * 6. Read-only and write-only registers
+ * 6. Read-only status register
  */
 
 `timescale 1ns/1ps
@@ -32,46 +32,15 @@ module test_i2c_slave;
 
     // Status inputs
     reg        status_gate_active;
-    reg [2:0]  status_adsr_state;
     reg        status_osc_running;
 
-    // Register outputs
+    // Register outputs (6 registers only)
     wire [7:0] reg_control;
-    wire [7:0] reg_waveform;
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
-    wire [7:0] reg_phase_offset;
-    wire [7:0] reg_attack;
-    wire [7:0] reg_decay;
-    wire [7:0] reg_sustain;
-    wire [7:0] reg_release;
-    wire [7:0] reg_amplitude;
-    wire [7:0] reg_svf1_cutoff;
-    wire [7:0] reg_svf1_resonance;
-    wire [7:0] reg_svf2_cutoff;
-    wire [7:0] reg_svf2_resonance;
-    wire [7:0] reg_filter_mode;
-    wire [7:0] reg_filter_enable;
     wire [7:0] reg_status;
-    wire [7:0] reg_wavetable_idx;
-    wire [7:0] reg_wavetable_data;
-    wire [7:0] reg_wavetable_ctrl;
-    wire [7:0] reg_mod_routing;
-    wire [7:0] reg_mod_depth_cutoff;
-    wire [7:0] reg_mod_depth_resonance;
-    wire [7:0] reg_mod_depth_pitch;
-    wire [7:0] reg_bypass_ctrl;
-    wire [7:0] reg_gain_square;
-    wire [7:0] reg_gain_sawtooth;
-    wire [7:0] reg_gain_triangle;
-    wire [7:0] reg_gain_sine;
-    wire [7:0] reg_gain_noise;
-    wire [7:0] reg_gain_wavetable;
-    wire [7:0] reg_glide_rate;
-    wire [7:0] reg_pwm_depth;
-    wire [7:0] reg_ring_mod_config;
 
     // Instantiate DUT
     i2c_slave #(
@@ -84,43 +53,12 @@ module test_i2c_slave;
         .sda_out(sda_out),
         .sda_oe(sda_oe),
         .reg_control(reg_control),
-        .reg_waveform(reg_waveform),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
         .reg_duty(reg_duty),
-        .reg_phase_offset(reg_phase_offset),
-        .reg_attack(reg_attack),
-        .reg_decay(reg_decay),
-        .reg_sustain(reg_sustain),
-        .reg_release(reg_release),
-        .reg_amplitude(reg_amplitude),
-        .reg_svf1_cutoff(reg_svf1_cutoff),
-        .reg_svf1_resonance(reg_svf1_resonance),
-        .reg_svf2_cutoff(reg_svf2_cutoff),
-        .reg_svf2_resonance(reg_svf2_resonance),
-        .reg_filter_mode(reg_filter_mode),
-        .reg_filter_enable(reg_filter_enable),
         .reg_status(reg_status),
-        .reg_wavetable_idx(reg_wavetable_idx),
-        .reg_wavetable_data(reg_wavetable_data),
-        .reg_wavetable_ctrl(reg_wavetable_ctrl),
-        .reg_mod_routing(reg_mod_routing),
-        .reg_mod_depth_cutoff(reg_mod_depth_cutoff),
-        .reg_mod_depth_resonance(reg_mod_depth_resonance),
-        .reg_mod_depth_pitch(reg_mod_depth_pitch),
-        .reg_bypass_ctrl(reg_bypass_ctrl),
-        .reg_gain_square(reg_gain_square),
-        .reg_gain_sawtooth(reg_gain_sawtooth),
-        .reg_gain_triangle(reg_gain_triangle),
-        .reg_gain_sine(reg_gain_sine),
-        .reg_gain_noise(reg_gain_noise),
-        .reg_gain_wavetable(reg_gain_wavetable),
-        .reg_glide_rate(reg_glide_rate),
-        .reg_pwm_depth(reg_pwm_depth),
-        .reg_ring_mod_config(reg_ring_mod_config),
         .status_gate_active(status_gate_active),
-        .status_adsr_state(status_adsr_state),
         .status_osc_running(status_osc_running)
     );
 
@@ -144,14 +82,13 @@ module test_i2c_slave;
         $dumpfile("i2c_slave.vcd");
         $dumpvars(0, test_i2c_slave);
 
-        $display("=== I2C Slave Interface Test ===\n");
+        $display("=== I2C Slave Interface Test (Minimal 6-Register Version) ===\n");
 
         // Initialize
         rst_n = 0;
         scl_drive = 1;
         sda_drive = 1;
         status_gate_active = 0;
-        status_adsr_state = 3'b000;
         status_osc_running = 0;
         #200;
 
@@ -182,12 +119,12 @@ module test_i2c_slave;
         #1000;
 
         $display("\n--- Test 3: Write to Control Register (0x00) ---");
-        i2c_write_register(8'h00, 8'b00000011);  // Enable=1, Gate=1
+        i2c_write_register(8'h00, 8'b00011101);  // OSC_EN=1, SW_GATE=0, waveforms=111
         #500;
-        if (reg_control == 8'b00000011) begin
+        if (reg_control == 8'b00011101) begin
             $display("✓ PASS: Control register = 0x%02X", reg_control);
         end else begin
-            $display("✗ FAIL: Control register = 0x%02X (expected 0x03)", reg_control);
+            $display("✗ FAIL: Control register = 0x%02X (expected 0x1D)", reg_control);
         end
 
         $display("\n--- Test 4: Write Frequency (24-bit, 3 registers) ---");
@@ -201,50 +138,60 @@ module test_i2c_slave;
             $display("✗ FAIL: Frequency = 0x%06X (expected 0x024000)", {reg_freq_high, reg_freq_mid, reg_freq_low});
         end
 
-        $display("\n--- Test 5: Burst Write (ADSR registers) ---");
+        $display("\n--- Test 5: Write Duty Cycle ---");
+        i2c_write_register(8'h05, 8'h40);  // 25% duty cycle
+        #500;
+        if (reg_duty == 8'h40) begin
+            $display("✓ PASS: Duty cycle = 0x%02X", reg_duty);
+        end else begin
+            $display("✗ FAIL: Duty cycle = 0x%02X (expected 0x40)", reg_duty);
+        end
+
+        $display("\n--- Test 6: Burst Write (Frequency registers) ---");
         i2c_start();
         i2c_write_byte(8'hA0, ack_bit);   // Address + Write
-        i2c_write_byte(8'h07, ack_bit);   // Reg addr = 0x07 (Attack)
-        i2c_write_byte(8'h05, ack_bit);   // Attack = 5
-        i2c_write_byte(8'h0A, ack_bit);   // Decay = 10 (auto-increment)
-        i2c_write_byte(8'h80, ack_bit);   // Sustain = 128
-        i2c_write_byte(8'h14, ack_bit);   // Release = 20
+        i2c_write_byte(8'h02, ack_bit);   // Reg addr = 0x02 (Freq low)
+        i2c_write_byte(8'hAA, ack_bit);   // Freq low = 0xAA
+        i2c_write_byte(8'hBB, ack_bit);   // Freq mid = 0xBB (auto-increment)
+        i2c_write_byte(8'hCC, ack_bit);   // Freq high = 0xCC
         i2c_stop();
         #500;
-        if (reg_attack == 8'h05 && reg_decay == 8'h0A &&
-            reg_sustain == 8'h80 && reg_release == 8'h14) begin
-            $display("✓ PASS: ADSR = %d/%d/%d/%d", reg_attack, reg_decay, reg_sustain, reg_release);
+        if ({reg_freq_high, reg_freq_mid, reg_freq_low} == 24'hCCBBAA) begin
+            $display("✓ PASS: Burst write frequency = 0x%06X", {reg_freq_high, reg_freq_mid, reg_freq_low});
         end else begin
-            $display("✗ FAIL: ADSR = %d/%d/%d/%d (expected 5/10/128/20)",
-                     reg_attack, reg_decay, reg_sustain, reg_release);
+            $display("✗ FAIL: Burst write frequency = 0x%06X (expected 0xCCBBAA)", {reg_freq_high, reg_freq_mid, reg_freq_low});
         end
 
-        $display("\n--- Test 6: Read from Register ---");
-        i2c_write_register(8'h0B, 8'hA5);  // Write test pattern to amplitude
+        $display("\n--- Test 7: Read from Register ---");
+        i2c_write_register(8'h05, 8'hA5);  // Write test pattern to duty
         #500;
-        i2c_read_register(8'h0B, read_data);
+        i2c_read_register(8'h05, read_data);
         #500;
         if (read_data == 8'hA5) begin
-            $display("✓ PASS: Read amplitude = 0x%02X", read_data);
+            $display("✓ PASS: Read duty = 0x%02X", read_data);
         end else begin
-            $display("✗ FAIL: Read amplitude = 0x%02X (expected 0xA5)", read_data);
+            $display("✗ FAIL: Read duty = 0x%02X (expected 0xA5)", read_data);
         end
 
-        $display("\n--- Test 7: Read Status Register (read-only) ---");
+        $display("\n--- Test 8: Read Status Register (read-only) ---");
         status_gate_active = 1;
-        status_adsr_state = 3'b010;  // Decay
         status_osc_running = 1;
         #500;
         i2c_read_register(8'h12, read_data);
         #500;
         $display("Status register: 0x%02X", read_data);
-        if (read_data == 8'b00010101) begin  // [7:5]=0, [4]=1 (osc), [3:1]=010 (decay), [0]=1 (gate)
+        if (read_data == 8'b00000011) begin  // [1]=osc_running, [0]=gate_active
             $display("✓ PASS: Status reflects input signals");
         end else begin
-            $display("✗ FAIL: Status = 0x%02X (expected 0x15)", read_data);
+            $display("✗ FAIL: Status = 0x%02X (expected 0x03)", read_data);
         end
 
-        $display("\n--- Test 8: Burst Read (Frequency registers) ---");
+        $display("\n--- Test 9: Burst Read (Frequency registers) ---");
+        i2c_write_register(8'h02, 8'h11);  // Set known values
+        i2c_write_register(8'h03, 8'h22);
+        i2c_write_register(8'h04, 8'h33);
+        #500;
+
         i2c_start();
         i2c_write_byte(8'hA0, ack_bit);   // Address + Write
         i2c_write_byte(8'h02, ack_bit);   // Set read pointer to 0x02
@@ -257,39 +204,33 @@ module test_i2c_slave;
         i2c_read_byte(read_data, 1'b1);   // Read with NACK (last byte)
         $display("Freq[23:16] = 0x%02X", read_data);
         i2c_stop();
-        if (read_data == 8'h02) begin
+        if (read_data == 8'h33) begin
             $display("✓ PASS: Burst read successful");
         end else begin
             $display("✗ FAIL: Burst read failed");
         end
 
-        $display("\n--- Test 9: Write to Mixer Gains ---");
-        i2c_write_register(8'h1B, 8'h10);  // Square gain
-        i2c_write_register(8'h1C, 8'h20);  // Sawtooth gain
-        i2c_write_register(8'h1D, 8'h30);  // Triangle gain
-        i2c_write_register(8'h1E, 8'h40);  // Sine gain
-        i2c_write_register(8'h1F, 8'h50);  // Noise gain
-        i2c_write_register(8'h20, 8'h60);  // Wavetable gain
+        $display("\n--- Test 10: Verify Read-Only Status Register ---");
+        // Try to write to status register (should be ignored)
+        i2c_write_register(8'h12, 8'hFF);
         #500;
-        if (reg_gain_square == 8'h10 && reg_gain_sawtooth == 8'h20 &&
-            reg_gain_triangle == 8'h30 && reg_gain_sine == 8'h40 &&
-            reg_gain_noise == 8'h50 && reg_gain_wavetable == 8'h60) begin
-            $display("✓ PASS: All mixer gains set correctly");
+        i2c_read_register(8'h12, read_data);
+        #500;
+        if (read_data == 8'b00000011) begin  // Should still reflect status inputs
+            $display("✓ PASS: Status register is read-only (0x%02X)", read_data);
         end else begin
-            $display("✗ FAIL: Mixer gains incorrect");
+            $display("✗ FAIL: Status register was written (0x%02X)", read_data);
         end
 
-        $display("\n--- Test 10: Write to Extended Registers ---");
-        i2c_write_register(8'h21, 8'h42);  // Glide rate
-        i2c_write_register(8'h22, 8'h33);  // PWM depth
-        i2c_write_register(8'h23, 8'h55);  // Ring mod config
+        $display("\n--- Test 11: Invalid Register Address ---");
+        i2c_write_register(8'h07, 8'h42);  // Invalid address (removed ADSR registers)
         #500;
-        if (reg_glide_rate == 8'h42 && reg_pwm_depth == 8'h33 &&
-            reg_ring_mod_config == 8'h55) begin
-            $display("✓ PASS: Extended registers = 0x%02X/0x%02X/0x%02X",
-                     reg_glide_rate, reg_pwm_depth, reg_ring_mod_config);
+        i2c_read_register(8'h07, read_data);
+        #500;
+        if (read_data == 8'hFF) begin
+            $display("✓ PASS: Invalid address returns 0xFF");
         end else begin
-            $display("✗ FAIL: Extended registers incorrect");
+            $display("⚠ WARNING: Invalid address returns 0x%02X", read_data);
         end
 
         $display("\n=== All I2C tests completed ===");

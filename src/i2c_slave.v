@@ -13,13 +13,11 @@
  * Waveform enables are now in control register bits
  * Saves ~100 cells from register storage and muxing logic
  *
- * Register Map (11 registers):
+ * Register Map (6 registers):
  * 0x00: Control (bit 0=OSC_EN, bit 1=SW_GATE, bits 2-4=waveform enables)
  * 0x02-0x04: Frequency (24-bit, little-endian)
  * 0x05: Duty cycle (square wave PWM)
- * 0x07-0x0A: ADSR (attack, decay, sustain, release)
- * 0x0B: Master amplitude (bit 0 only: 0=mute, 1=full)
- * 0x12: Status (read-only: gate, ADSR state, osc running)
+ * 0x12: Status (read-only: gate, osc running)
  *
  * Resource Usage: ~200 cells (5% of 1x1 tile, was ~300 cells)
  */
@@ -36,23 +34,17 @@ module i2c_slave #(
     output wire        sda_out,    // I2C data output
     output wire        sda_oe,     // I2C data output enable (1=drive, 0=hi-z)
 
-    // Essential register outputs (11 registers total)
+    // Essential register outputs (6 registers total)
     // Control register bits: [0]=OSC_EN, [1]=SW_GATE, [2]=enable_square, [3]=enable_sawtooth, [4]=enable_triangle
     output reg [7:0]   reg_control,       // 0x00: Control with waveform enables
     output reg [7:0]   reg_freq_low,      // 0x02: Frequency low byte
     output reg [7:0]   reg_freq_mid,      // 0x03: Frequency mid byte
     output reg [7:0]   reg_freq_high,     // 0x04: Frequency high byte
     output reg [7:0]   reg_duty,          // 0x05: Square wave duty cycle
-    output reg [7:0]   reg_attack,        // 0x07: ADSR attack rate
-    output reg [7:0]   reg_decay,         // 0x08: ADSR decay rate
-    output reg [7:0]   reg_sustain,       // 0x09: ADSR sustain level
-    output reg [7:0]   reg_release,       // 0x0A: ADSR release rate
-    output reg [7:0]   reg_amplitude,     // 0x0B: Master amplitude (bit 0 only)
     output wire [7:0]  reg_status,        // 0x12: Read-only status
 
     // Status inputs (for read-only status register)
     input  wire        status_gate_active,
-    input  wire [2:0]  status_adsr_state,
     input  wire        status_osc_running
 );
 
@@ -112,7 +104,7 @@ module i2c_slave #(
     // ========================================
     // Status Register (Read-Only)
     // ========================================
-    assign reg_status = {3'b000, status_osc_running, status_adsr_state, status_gate_active};
+    assign reg_status = {6'b000000, status_osc_running, status_gate_active};
 
     // ========================================
     // I2C State Machine
@@ -289,7 +281,7 @@ module i2c_slave #(
     end
 
     // ========================================
-    // Register Write Task (11 essential registers)
+    // Register Write Task (6 essential registers)
     // ========================================
     task write_register;
         input [7:0] addr;
@@ -301,11 +293,6 @@ module i2c_slave #(
                 8'h03: reg_freq_mid <= data;
                 8'h04: reg_freq_high <= data;
                 8'h05: reg_duty <= data;
-                8'h07: reg_attack <= data;
-                8'h08: reg_decay <= data;
-                8'h09: reg_sustain <= data;
-                8'h0A: reg_release <= data;
-                8'h0B: reg_amplitude <= data;
                 // 0x12 is read-only status register
                 default: begin
                     // Invalid/removed address, ignore
@@ -315,7 +302,7 @@ module i2c_slave #(
     endtask
 
     // ========================================
-    // Register Read Function (11 essential registers)
+    // Register Read Function (6 essential registers)
     // ========================================
     function [7:0] read_register;
         input [7:0] addr;
@@ -326,11 +313,6 @@ module i2c_slave #(
                 8'h03: read_register = reg_freq_mid;
                 8'h04: read_register = reg_freq_high;
                 8'h05: read_register = reg_duty;
-                8'h07: read_register = reg_attack;
-                8'h08: read_register = reg_decay;
-                8'h09: read_register = reg_sustain;
-                8'h0A: read_register = reg_release;
-                8'h0B: read_register = reg_amplitude;
                 8'h12: read_register = reg_status;  // Read-only status
                 default: read_register = 8'hFF;  // Invalid/removed address
             endcase
@@ -338,7 +320,7 @@ module i2c_slave #(
     endfunction
 
     // ========================================
-    // Register Initialization (11 essential registers)
+    // Register Initialization (6 essential registers)
     // ========================================
     initial begin
         // Initialize essential registers to default values
@@ -348,11 +330,6 @@ module i2c_slave #(
         reg_freq_mid = 8'h00;
         reg_freq_high = 8'h00;
         reg_duty = 8'h80;              // 50% duty cycle
-        reg_attack = 8'h10;            // Fast attack
-        reg_decay = 8'h20;             // Medium decay
-        reg_sustain = 8'hC0;           // 75% sustain level
-        reg_release = 8'h30;           // Medium release
-        reg_amplitude = 8'h01;         // Master amplitude on (bit 0 = 1)
     end
 
 endmodule
