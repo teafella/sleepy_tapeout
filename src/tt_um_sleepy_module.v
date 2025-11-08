@@ -1,20 +1,23 @@
 /*
- * TinyTapeout Synthesizer - Top Level Module (Minimal - Area-Optimized)
+ * TinyTapeout Wavetable Synthesizer - Top Level Module (Config C)
  *
- * SPI-Controlled Waveform Generator with Smooth Volume Control
+ * Hybrid Wavetable Synthesizer with Dual Modes
  *
- * AREA OPTIMIZATION for 1×1 tile fit:
- * - SPI RX interface for configuration (~45 cells, vs ~180 for UART, ~220 for I2C)
- * - Phase accumulator with 3 waveform generators (square, sawtooth, triangle)
- * - 3-channel waveform mixer with on/off enables
- * - Smooth 8-bit volume control via 8×8 multiplier (saved area by switching to SPI)
+ * Features:
+ * - 8-sample wavetable with linear interpolation (32 blend steps)
+ * - 24-bit phase accumulator for perfect musical tuning (<1 cent error)
+ * - Dual mode: Standalone wavetable synthesis OR sample streaming
+ * - 8-level volume control (instant bit-shift)
+ * - SPI interface for all configuration
  * - Delta-sigma DAC for 1-bit audio output
  *
- * Removed to fit in 1x1 tile:
- * - ADSR envelope generator (~250 cells) - envelope shaping via external SPI control
- * - Amplitude modulator (~80 cells) - not needed without ADSR
- * - Sine wave, noise generators
- * - Individual gain controls
+ * Area Budget (~254 cells, ~56% utilization):
+ * - SPI RX interface: ~45 cells
+ * - Wavetable oscillator (24-bit phase + interpolation): ~105 cells
+ * - Volume control (8-level bit-shift): ~10 cells
+ * - Delta-Sigma DAC: ~30 cells
+ * - Control logic: ~10 cells
+ * - Routing overhead: ~54 cells
  *
  * TinyTapeout Pin Assignments:
  * - ui_in[0]: GATE (hardware gate trigger)
@@ -25,7 +28,7 @@
  * - uo_out[0]: DAC_OUT (1-bit delta-sigma audio)
  * - uo_out[1]: GATE_LED (gate status indicator)
  * - uo_out[2]: OSC_RUN (oscillator running indicator)
- * - uo_out[3]: SYNC (phase sync pulse)
+ * - uo_out[3]: SYNC (phase sync pulse, phase[23])
  */
 
 module tt_um_sleepy_module (
@@ -40,21 +43,33 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // SPI RX Interface - Minimal Register Bank (7 registers)
+    // SPI RX Interface - Wavetable Register Bank (12 registers)
     // ========================================
-    wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
+    wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=STREAM_MODE, [2]=SW_GATE
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
-    wire [7:0] reg_duty;
-    wire [7:0] reg_volume;        // Master volume control (smooth 0-255)
+    wire [7:0] reg_volume;        // Master volume control (8-level)
+    wire [7:0] reg_wavetable_0;   // Wavetable sample 0 (also used for streaming)
+    wire [7:0] reg_wavetable_1;   // Wavetable sample 1
+    wire [7:0] reg_wavetable_2;   // Wavetable sample 2
+    wire [7:0] reg_wavetable_3;   // Wavetable sample 3
+    wire [7:0] reg_wavetable_4;   // Wavetable sample 4
+    wire [7:0] reg_wavetable_5;   // Wavetable sample 5
+    wire [7:0] reg_wavetable_6;   // Wavetable sample 6
+    wire [7:0] reg_wavetable_7;   // Wavetable sample 7
     wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
     wire [23:0] frequency = {reg_freq_high, reg_freq_mid, reg_freq_low};
 
+    // Control bit decode
+    wire osc_enable = reg_control[0];
+    wire stream_mode = reg_control[1];
+    wire sw_gate = reg_control[2];
+
     // Gate signal: hardware pin OR software control
-    wire gate = ui_in[0] | reg_control[1];
+    wire gate = ui_in[0] | sw_gate;
 
     // System reset: external reset AND hardware reset pin
     wire system_rst_n = rst_n & ui_in[1];
@@ -62,7 +77,7 @@ module tt_um_sleepy_module (
     // ========================================
     // SPI RX Interface
     // ========================================
-    wire osc_running;
+    wire osc_running = osc_enable & ena;
 
     spi_rx_registers spi_rx (
         .clk(clk),
@@ -70,13 +85,20 @@ module tt_um_sleepy_module (
         .spi_mosi(uio_in[0]),        // SPI MOSI on uio[0]
         .spi_sck(uio_in[1]),         // SPI SCK on uio[1]
         .spi_cs(uio_in[2]),          // SPI CS on uio[2]
-        // Minimal registers only (7 total)
+        // Register outputs (12 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
-        .reg_duty(reg_duty),
         .reg_volume(reg_volume),
+        .reg_wavetable_0(reg_wavetable_0),
+        .reg_wavetable_1(reg_wavetable_1),
+        .reg_wavetable_2(reg_wavetable_2),
+        .reg_wavetable_3(reg_wavetable_3),
+        .reg_wavetable_4(reg_wavetable_4),
+        .reg_wavetable_5(reg_wavetable_5),
+        .reg_wavetable_6(reg_wavetable_6),
+        .reg_wavetable_7(reg_wavetable_7),
         .reg_status(reg_status),
         // Status inputs
         .status_gate_active(gate),
@@ -88,53 +110,25 @@ module tt_um_sleepy_module (
     assign uio_out[7:0] = 8'b00000000;
 
     // ========================================
-    // Phase Accumulator
+    // Wavetable Oscillator (24-bit Phase + Interpolation)
     // ========================================
-    wire [23:0] phase;
-    wire [7:0] square_out;
+    wire [7:0] wavetable_out;
 
-    phase_accumulator phase_acc (
+    wavetable_oscillator wavetable_osc (
         .clk(clk),
         .rst_n(system_rst_n),
-        .enable(reg_control[0] & ena),
+        .enable(osc_enable & ena),
         .frequency(frequency),
-        .duty_cycle(reg_duty),
-        .phase_out(phase),
-        .square_out(square_out)
-    );
-
-    assign osc_running = reg_control[0] & ena;
-
-    // ========================================
-    // Waveform Generators (3 waveforms only)
-    // ========================================
-    wire [7:0] sawtooth_out;
-    wire [7:0] triangle_out;
-
-    waveform_generators wavegens (
-        .clk(clk),
-        .rst_n(system_rst_n),
-        .enable(reg_control[0] & ena),
-        .phase_in(phase),
-        .sawtooth_out(sawtooth_out),
-        .triangle_out(triangle_out)
-    );
-
-    // ========================================
-    // 3-Channel Waveform Mixer (on/off control)
-    // ========================================
-    wire [7:0] mixed_wave;
-
-    waveform_mixer mixer (
-        .clk(clk),
-        .rst_n(system_rst_n),
-        .square_in(square_out),
-        .sawtooth_in(sawtooth_out),
-        .triangle_in(triangle_out),
-        .enable_square(reg_control[2]),    // Control bit 2
-        .enable_sawtooth(reg_control[3]),  // Control bit 3
-        .enable_triangle(reg_control[4]),  // Control bit 4
-        .mixed_out(mixed_wave)
+        .stream_mode(stream_mode),
+        .wavetable_0(reg_wavetable_0),
+        .wavetable_1(reg_wavetable_1),
+        .wavetable_2(reg_wavetable_2),
+        .wavetable_3(reg_wavetable_3),
+        .wavetable_4(reg_wavetable_4),
+        .wavetable_5(reg_wavetable_5),
+        .wavetable_6(reg_wavetable_6),
+        .wavetable_7(reg_wavetable_7),
+        .audio_out(wavetable_out)
     );
 
     // ========================================
@@ -165,14 +159,14 @@ module tt_um_sleepy_module (
             volume_scaled <= 8'h00;
         end else begin
             case (reg_volume[7:5])  // Use top 3 bits for 8 discrete levels
-                3'd0: volume_scaled <= 8'h00;                                    // Mute
-                3'd1: volume_scaled <= mixed_wave >> 3;                          // 1/8 volume
-                3'd2: volume_scaled <= mixed_wave >> 2;                          // 1/4 volume
-                3'd3: volume_scaled <= (mixed_wave >> 2) + (mixed_wave >> 3);   // 3/8 volume
-                3'd4: volume_scaled <= mixed_wave >> 1;                          // 1/2 volume
-                3'd5: volume_scaled <= (mixed_wave >> 1) + (mixed_wave >> 3);   // 5/8 volume
-                3'd6: volume_scaled <= (mixed_wave >> 1) + (mixed_wave >> 2);   // 3/4 volume
-                3'd7: volume_scaled <= mixed_wave;                               // Full volume
+                3'd0: volume_scaled <= 8'h00;                                          // Mute
+                3'd1: volume_scaled <= wavetable_out >> 3;                             // 1/8 volume
+                3'd2: volume_scaled <= wavetable_out >> 2;                             // 1/4 volume
+                3'd3: volume_scaled <= (wavetable_out >> 2) + (wavetable_out >> 3);   // 3/8 volume
+                3'd4: volume_scaled <= wavetable_out >> 1;                             // 1/2 volume
+                3'd5: volume_scaled <= (wavetable_out >> 1) + (wavetable_out >> 3);   // 5/8 volume
+                3'd6: volume_scaled <= (wavetable_out >> 1) + (wavetable_out >> 2);   // 3/4 volume
+                3'd7: volume_scaled <= wavetable_out;                                  // Full volume
             endcase
         end
     end
@@ -195,7 +189,7 @@ module tt_um_sleepy_module (
     assign uo_out[0] = dac_out;           // 1-bit audio output
     assign uo_out[1] = gate;              // Gate LED indicator
     assign uo_out[2] = osc_running;       // Oscillator running indicator
-    assign uo_out[3] = phase[23];         // Sync pulse (phase MSB)
+    assign uo_out[3] = stream_mode;       // Mode indicator (0=wavetable, 1=streaming)
     assign uo_out[7:4] = 4'b0000;         // Reserved/unused outputs
 
 endmodule

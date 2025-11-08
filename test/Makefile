@@ -7,9 +7,7 @@ TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = tt_um_sleepy_module.v \
                   spi_rx_registers.v \
-                  phase_accumulator.v \
-                  waveform_generators.v \
-                  waveform_mixer.v \
+                  wavetable_oscillator.v \
                   delta_sigma_dac.v
 
 ifneq ($(GATES),yes)
