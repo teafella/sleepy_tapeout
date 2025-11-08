@@ -73,6 +73,7 @@ module tt_um_sleepy_module (
     wire [7:0] reg_glide_rate;
     wire [7:0] reg_pwm_depth;
     wire [7:0] reg_ring_mod_config;
+    wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
     wire [23:0] frequency = {reg_freq_high, reg_freq_mid, reg_freq_low};
@@ -118,6 +119,7 @@ module tt_um_sleepy_module (
         .reg_svf2_resonance(reg_svf2_resonance),
         .reg_filter_mode(reg_filter_mode),
         .reg_filter_enable(reg_filter_enable),
+        .reg_status(reg_status),
         .reg_wavetable_idx(reg_wavetable_idx),
         .reg_wavetable_data(reg_wavetable_data),
         .reg_wavetable_ctrl(reg_wavetable_ctrl),
