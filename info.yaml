@@ -10,6 +10,13 @@ project:
   top_module:   "tt_um_sleepy_module"  # Top-level module name
   source_files:                 # List of source files
     - "tt_um_sleepy_module.v"
+    - "i2c_slave.v"
+    - "phase_accumulator.v"
+    - "waveform_generators.v"
+    - "waveform_mixer.v"
+    - "adsr_envelope.v"
+    - "amplitude_modulator.v"
+    - "delta_sigma_dac.v"
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
