@@ -1,17 +1,17 @@
 /*
  * TinyTapeout Synthesizer - Top Level Module (Minimal - Area-Optimized)
  *
- * UART-Controlled Waveform Generator with Smooth Volume Control
+ * SPI-Controlled Waveform Generator with Smooth Volume Control
  *
  * AREA OPTIMIZATION for 1×1 tile fit:
- * - UART RX interface for configuration (~80 cells, vs ~220 for I2C)
+ * - SPI RX interface for configuration (~45 cells, vs ~180 for UART, ~220 for I2C)
  * - Phase accumulator with 3 waveform generators (square, sawtooth, triangle)
  * - 3-channel waveform mixer with on/off enables
- * - Smooth 8-bit volume control via 8×8 multiplier (saved area by switching to UART)
+ * - Smooth 8-bit volume control via 8×8 multiplier (saved area by switching to SPI)
  * - Delta-sigma DAC for 1-bit audio output
  *
  * Removed to fit in 1x1 tile:
- * - ADSR envelope generator (~250 cells) - envelope shaping via external UART control
+ * - ADSR envelope generator (~250 cells) - envelope shaping via external SPI control
  * - Amplitude modulator (~80 cells) - not needed without ADSR
  * - Sine wave, noise generators
  * - Individual gain controls
@@ -19,7 +19,9 @@
  * TinyTapeout Pin Assignments:
  * - ui_in[0]: GATE (hardware gate trigger)
  * - ui_in[1]: HW_RST (hardware reset, active low)
- * - uio[0]: UART_RX (UART receive, 115200 baud, 8N1)
+ * - uio[0]: SPI_MOSI (SPI data input, Master Out Slave In)
+ * - uio[1]: SPI_SCK (SPI clock input from master)
+ * - uio[2]: SPI_CS (SPI chip select, active low)
  * - uo_out[0]: DAC_OUT (1-bit delta-sigma audio)
  * - uo_out[1]: GATE_LED (gate status indicator)
  * - uo_out[2]: OSC_RUN (oscillator running indicator)
@@ -38,7 +40,7 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // UART RX Interface - Minimal Register Bank (7 registers)
+    // SPI RX Interface - Minimal Register Bank (7 registers)
     // ========================================
     wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
     wire [7:0] reg_freq_low;
@@ -58,17 +60,16 @@ module tt_um_sleepy_module (
     wire system_rst_n = rst_n & ui_in[1];
 
     // ========================================
-    // UART RX Interface
+    // SPI RX Interface
     // ========================================
     wire osc_running;
 
-    uart_rx_registers #(
-        .CLK_FREQ(50_000_000),
-        .BAUD_RATE(115200)
-    ) uart_rx (
+    spi_rx_registers spi_rx (
         .clk(clk),
         .rst_n(system_rst_n),
-        .rx(uio_in[0]),              // UART RX on uio[0]
+        .spi_mosi(uio_in[0]),        // SPI MOSI on uio[0]
+        .spi_sck(uio_in[1]),         // SPI SCK on uio[1]
+        .spi_cs(uio_in[2]),          // SPI CS on uio[2]
         // Minimal registers only (7 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
@@ -82,7 +83,7 @@ module tt_um_sleepy_module (
         .status_osc_running(osc_running)
     );
 
-    // Configure all UIOs as inputs (UART RX only)
+    // Configure all UIOs as inputs (SPI RX only, no MISO)
     assign uio_oe[7:0] = 8'b00000000;  // All UIOs as inputs
     assign uio_out[7:0] = 8'b00000000;
 
