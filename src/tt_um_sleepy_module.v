@@ -1,17 +1,17 @@
 /*
- * TinyTapeout Synthesizer - Top Level Module
+ * TinyTapeout Synthesizer - Top Level Module (Minimal - Area-Optimized)
  *
  * I2C-Controlled Waveform Generator with ADSR Envelope
  *
- * This is a simplified integration that includes the core synthesizer components:
- * - I2C slave interface for configuration
- * - Phase accumulator with 6 waveform generators
- * - 6-channel waveform mixer with individual gain controls
+ * EXTREME AREA OPTIMIZATION for 1×1 tile fit:
+ * - I2C slave interface for configuration (11 registers)
+ * - Phase accumulator with 3 waveform generators (square, sawtooth, triangle)
+ * - 3-channel waveform mixer with on/off enables
  * - ADSR envelope generator
- * - Amplitude modulator
+ * - Amplitude modulator with on/off master control
  * - Delta-sigma DAC for 1-bit audio output
  *
- * Additional components (filter, modulation routing, etc.) will be added incrementally.
+ * Removed: sine wave, noise, individual gain controls
  *
  * TinyTapeout Pin Assignments:
  * - ui_in[0]: GATE (hardware gate trigger)
@@ -36,9 +36,9 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // I2C Slave Interface - Essential Register Bank (16 registers)
+    // I2C Slave Interface - Minimal Register Bank (11 registers)
     // ========================================
-    wire [7:0] reg_control;
+    wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
@@ -47,13 +47,8 @@ module tt_um_sleepy_module (
     wire [7:0] reg_decay;
     wire [7:0] reg_sustain;
     wire [7:0] reg_release;
-    wire [7:0] reg_amplitude;
+    wire [7:0] reg_amplitude;     // bit 0 only: 0=mute, 1=full
     wire [7:0] reg_status;
-    wire [7:0] reg_gain_square;
-    wire [7:0] reg_gain_sawtooth;
-    wire [7:0] reg_gain_triangle;
-    wire [7:0] reg_gain_sine;
-    wire [7:0] reg_gain_noise;
 
     // Combined frequency from three 8-bit registers
     wire [23:0] frequency = {reg_freq_high, reg_freq_mid, reg_freq_low};
@@ -81,7 +76,7 @@ module tt_um_sleepy_module (
         .sda_in(uio_in[0]),
         .sda_out(sda_out_i2c),
         .sda_oe(sda_oe_i2c),
-        // Essential registers only (16 total)
+        // Minimal registers only (11 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
@@ -93,11 +88,6 @@ module tt_um_sleepy_module (
         .reg_release(reg_release),
         .reg_amplitude(reg_amplitude),
         .reg_status(reg_status),
-        .reg_gain_square(reg_gain_square),
-        .reg_gain_sawtooth(reg_gain_sawtooth),
-        .reg_gain_triangle(reg_gain_triangle),
-        .reg_gain_sine(reg_gain_sine),
-        .reg_gain_noise(reg_gain_noise),
         // Status inputs
         .status_gate_active(gate),
         .status_adsr_state(adsr_state_for_status),
@@ -129,12 +119,10 @@ module tt_um_sleepy_module (
     assign osc_running = reg_control[0] & ena;
 
     // ========================================
-    // Waveform Generators
+    // Waveform Generators (3 waveforms only)
     // ========================================
     wire [7:0] sawtooth_out;
     wire [7:0] triangle_out;
-    wire [7:0] sine_out;
-    wire [7:0] noise_out;
 
     waveform_generators wavegens (
         .clk(clk),
@@ -142,13 +130,11 @@ module tt_um_sleepy_module (
         .enable(reg_control[0] & ena),
         .phase_in(phase),
         .sawtooth_out(sawtooth_out),
-        .triangle_out(triangle_out),
-        .sine_out(sine_out),
-        .noise_out(noise_out)
+        .triangle_out(triangle_out)
     );
 
     // ========================================
-    // 6-Channel Waveform Mixer (5 active waveforms)
+    // 3-Channel Waveform Mixer (on/off control)
     // ========================================
     wire [7:0] mixed_wave;
 
@@ -158,15 +144,9 @@ module tt_um_sleepy_module (
         .square_in(square_out),
         .sawtooth_in(sawtooth_out),
         .triangle_in(triangle_out),
-        .sine_in(sine_out),
-        .noise_in(noise_out),
-        .wavetable_in(8'h00),  // Wavetable not implemented, tie to 0
-        .gain_square(reg_gain_square),
-        .gain_sawtooth(reg_gain_sawtooth),
-        .gain_triangle(reg_gain_triangle),
-        .gain_sine(reg_gain_sine),
-        .gain_noise(reg_gain_noise),
-        .gain_wavetable(8'h00),  // Wavetable gain tied to 0
+        .enable_square(reg_control[2]),    // Control bit 2
+        .enable_sawtooth(reg_control[3]),  // Control bit 3
+        .enable_triangle(reg_control[4]),  // Control bit 4
         .mixed_out(mixed_wave)
     );
 

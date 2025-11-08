@@ -1,27 +1,27 @@
 /*
- * I2C Slave Interface with Register Bank (Area-Optimized)
+ * I2C Slave Interface with Register Bank (Minimal - Extreme Area-Optimized)
  *
- * This module implements a stripped-down I2C slave interface for the synthesizer.
+ * This module implements a minimal I2C slave interface for the synthesizer.
  * It supports:
  * - 7-bit addressing
  * - Standard mode (100 kHz) and Fast mode (400 kHz)
- * - 16 essential registers only (was 36)
+ * - 11 essential registers only (was 16)
  * - Read and write operations
  * - Input synchronizers for SCL and SDA
  *
- * AREA OPTIMIZATION: Removed 20 unimplemented/unused registers
- * Saves ~400-500 cells from register storage and muxing logic
+ * EXTREME AREA OPTIMIZATION: Removed individual gain registers
+ * Waveform enables are now in control register bits
+ * Saves ~100 cells from register storage and muxing logic
  *
- * Register Map (16 registers):
- * 0x00: Control (OSC_EN, SW_GATE)
+ * Register Map (11 registers):
+ * 0x00: Control (bit 0=OSC_EN, bit 1=SW_GATE, bits 2-4=waveform enables)
  * 0x02-0x04: Frequency (24-bit, little-endian)
  * 0x05: Duty cycle (square wave PWM)
  * 0x07-0x0A: ADSR (attack, decay, sustain, release)
- * 0x0B: Master amplitude
+ * 0x0B: Master amplitude (bit 0 only: 0=mute, 1=full)
  * 0x12: Status (read-only: gate, ADSR state, osc running)
- * 0x1B-0x1F: Mixer gains (square, saw, tri, sine, noise)
  *
- * Resource Usage: ~300 cells (7.5% of 1x1 tile, was ~800 cells)
+ * Resource Usage: ~200 cells (5% of 1x1 tile, was ~300 cells)
  */
 
 module i2c_slave #(
@@ -36,8 +36,9 @@ module i2c_slave #(
     output wire        sda_out,    // I2C data output
     output wire        sda_oe,     // I2C data output enable (1=drive, 0=hi-z)
 
-    // Essential register outputs (16 registers total)
-    output reg [7:0]   reg_control,       // 0x00: OSC_EN, SW_GATE
+    // Essential register outputs (11 registers total)
+    // Control register bits: [0]=OSC_EN, [1]=SW_GATE, [2]=enable_square, [3]=enable_sawtooth, [4]=enable_triangle
+    output reg [7:0]   reg_control,       // 0x00: Control with waveform enables
     output reg [7:0]   reg_freq_low,      // 0x02: Frequency low byte
     output reg [7:0]   reg_freq_mid,      // 0x03: Frequency mid byte
     output reg [7:0]   reg_freq_high,     // 0x04: Frequency high byte
@@ -46,13 +47,8 @@ module i2c_slave #(
     output reg [7:0]   reg_decay,         // 0x08: ADSR decay rate
     output reg [7:0]   reg_sustain,       // 0x09: ADSR sustain level
     output reg [7:0]   reg_release,       // 0x0A: ADSR release rate
-    output reg [7:0]   reg_amplitude,     // 0x0B: Master amplitude
+    output reg [7:0]   reg_amplitude,     // 0x0B: Master amplitude (bit 0 only)
     output wire [7:0]  reg_status,        // 0x12: Read-only status
-    output reg [7:0]   reg_gain_square,   // 0x1B: Square wave gain
-    output reg [7:0]   reg_gain_sawtooth, // 0x1C: Sawtooth gain
-    output reg [7:0]   reg_gain_triangle, // 0x1D: Triangle gain
-    output reg [7:0]   reg_gain_sine,     // 0x1E: Sine wave gain
-    output reg [7:0]   reg_gain_noise,    // 0x1F: Noise gain
 
     // Status inputs (for read-only status register)
     input  wire        status_gate_active,
@@ -294,7 +290,7 @@ module i2c_slave #(
     end
 
     // ========================================
-    // Register Write Task (16 essential registers)
+    // Register Write Task (11 essential registers)
     // ========================================
     task write_register;
         input [7:0] addr;
@@ -312,11 +308,6 @@ module i2c_slave #(
                 8'h0A: reg_release <= data;
                 8'h0B: reg_amplitude <= data;
                 // 0x12 is read-only status register
-                8'h1B: reg_gain_square <= data;
-                8'h1C: reg_gain_sawtooth <= data;
-                8'h1D: reg_gain_triangle <= data;
-                8'h1E: reg_gain_sine <= data;
-                8'h1F: reg_gain_noise <= data;
                 default: begin
                     // Invalid/removed address, ignore
                 end
@@ -325,7 +316,7 @@ module i2c_slave #(
     endtask
 
     // ========================================
-    // Register Read Function (16 essential registers)
+    // Register Read Function (11 essential registers)
     // ========================================
     function [7:0] read_register;
         input [7:0] addr;
@@ -342,22 +333,18 @@ module i2c_slave #(
                 8'h0A: read_register = reg_release;
                 8'h0B: read_register = reg_amplitude;
                 8'h12: read_register = reg_status;  // Read-only status
-                8'h1B: read_register = reg_gain_square;
-                8'h1C: read_register = reg_gain_sawtooth;
-                8'h1D: read_register = reg_gain_triangle;
-                8'h1E: read_register = reg_gain_sine;
-                8'h1F: read_register = reg_gain_noise;
                 default: read_register = 8'hFF;  // Invalid/removed address
             endcase
         end
     endfunction
 
     // ========================================
-    // Register Initialization (16 essential registers)
+    // Register Initialization (11 essential registers)
     // ========================================
     initial begin
         // Initialize essential registers to default values
-        reg_control = 8'h00;           // Oscillator disabled
+        // Control: bit 0=OSC_EN, bit 1=SW_GATE, bits 2-4=waveform enables
+        reg_control = 8'b00011100;     // Oscillator disabled, all 3 waveforms enabled
         reg_freq_low = 8'h00;
         reg_freq_mid = 8'h00;
         reg_freq_high = 8'h00;
@@ -366,12 +353,7 @@ module i2c_slave #(
         reg_decay = 8'h20;             // Medium decay
         reg_sustain = 8'hC0;           // 75% sustain level
         reg_release = 8'h30;           // Medium release
-        reg_amplitude = 8'hFF;         // Full master amplitude
-        reg_gain_square = 8'h00;       // All waveforms muted by default
-        reg_gain_sawtooth = 8'h00;
-        reg_gain_triangle = 8'h00;
-        reg_gain_sine = 8'hFF;         // Sine at full by default
-        reg_gain_noise = 8'h00;
+        reg_amplitude = 8'h01;         // Master amplitude on (bit 0 = 1)
     end
 
 endmodule

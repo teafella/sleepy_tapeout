@@ -60,24 +60,12 @@ module amplitude_modulator (
     wire [7:0] envelope_modulated = envelope_product[15:8];
 
     // ========================================
-    // Stage 2: Apply master amplitude via shift
+    // Stage 2: Apply master amplitude (simple on/off)
     // ========================================
-    // If master_amplitude == 0, mute completely
-    // Otherwise use upper 2 bits to select shift amount (power-of-2 gain)
-    reg [7:0] amplitude_scaled;
-
-    always @(*) begin
-        if (master_amplitude == 8'h00) begin
-            amplitude_scaled = 8'h00;  // Mute
-        end else begin
-            case (master_amplitude[7:6])
-                2'b00: amplitude_scaled = envelope_modulated >> 2;  // 1/4 volume (0x01-0x3F)
-                2'b01: amplitude_scaled = envelope_modulated >> 1;  // 1/2 volume (0x40-0x7F)
-                2'b10: amplitude_scaled = {1'b0, envelope_modulated[7:1]} + {2'b0, envelope_modulated[7:2]};  // 3/4 volume (0x80-0xBF)
-                2'b11: amplitude_scaled = envelope_modulated;       // Full volume (0xC0-0xFF)
-            endcase
-        end
-    end
+    // EXTREME SIMPLIFICATION: Just use bit 0 for on/off
+    // master_amplitude[0] = 0: mute
+    // master_amplitude[0] = 1: full volume
+    wire [7:0] amplitude_scaled = master_amplitude[0] ? envelope_modulated : 8'h00;
 
     // ========================================
     // Stage 3: Output register for timing
