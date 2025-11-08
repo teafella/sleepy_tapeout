@@ -56,18 +56,8 @@ module waveform_mixer (
     wire overflow = (sum_final[9:8] != 2'b00);
     wire [7:0] mixed_saturated = overflow ? 8'hFF : sum_final[7:0];
 
-    // ========================================
-    // Stage 4: Output register for timing
-    // ========================================
-    reg [7:0] mixed_out_reg;
-
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
-            mixed_out_reg <= 8'h00;
-        else
-            mixed_out_reg <= mixed_saturated;
-    end
-
-    assign mixed_out = mixed_out_reg;
+    // Output register removed to save area (~8 cells)
+    // Amplitude modulator already has output register
+    assign mixed_out = mixed_saturated;
 
 endmodule

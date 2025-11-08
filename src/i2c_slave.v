@@ -57,28 +57,27 @@ module i2c_slave #(
 );
 
     // ========================================
-    // Input Synchronizers
+    // Input Synchronizers (2-stage - saves 4 FFs vs 3-stage)
     // ========================================
-    // Two-stage synchronizers to prevent metastability
-    reg [2:0] scl_sync;
-    reg [2:0] sda_sync;
+    reg [1:0] scl_sync;
+    reg [1:0] sda_sync;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            scl_sync <= 3'b111;
-            sda_sync <= 3'b111;
+            scl_sync <= 2'b11;
+            sda_sync <= 2'b11;
         end else begin
-            scl_sync <= {scl_sync[1:0], scl_in};
-            sda_sync <= {sda_sync[1:0], sda_in};
+            scl_sync <= {scl_sync[0], scl_in};
+            sda_sync <= {sda_sync[0], sda_in};
         end
     end
 
-    wire scl = scl_sync[2];
-    wire sda = sda_sync[2];
+    wire scl = scl_sync[1];
+    wire sda = sda_sync[1];
 
-    // Edge detection for SCL (scl_sync[2] is older, scl_sync[1] is newer)
-    wire scl_rising = (scl_sync[2:1] == 2'b01);   // older=0, newer=1
-    wire scl_falling = (scl_sync[2:1] == 2'b10);  // older=1, newer=0
+    // Edge detection for SCL
+    wire scl_rising = (scl_sync == 2'b01);   // was low, now high
+    wire scl_falling = (scl_sync == 2'b10);  // was high, now low
 
     // ========================================
     // I2C Protocol State Machine
@@ -104,11 +103,11 @@ module i2c_slave #(
     assign sda_out = sda_out_reg;
     assign sda_oe = sda_oe_reg;
 
-    // START condition: SDA falling while SCL high (older=1, newer=0)
-    wire start_cond = (scl_sync[2] == 1'b1) && (sda_sync[2:1] == 2'b10);
+    // START condition: SDA falling while SCL high
+    wire start_cond = (scl_sync[1] == 1'b1) && (sda_sync == 2'b10);
 
-    // STOP condition: SDA rising while SCL high (older=0, newer=1)
-    wire stop_cond = (scl_sync[2] == 1'b1) && (sda_sync[2:1] == 2'b01);
+    // STOP condition: SDA rising while SCL high
+    wire stop_cond = (scl_sync[1] == 1'b1) && (sda_sync == 2'b01);
 
     // ========================================
     // Status Register (Read-Only)

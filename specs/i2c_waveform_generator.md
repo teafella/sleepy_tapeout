@@ -2,25 +2,33 @@
 
 ## 1. System Overview
 
-This specification describes a complete synthesizer voice module for TinyTapeout that provides I2C-controlled waveform generation with envelope shaping, filtering, and user-programmable wavetables. The system is designed to fit within a 1x1 tile using approximately 92% of available resources.
+This specification describes a **minimal viable synthesizer voice module** for TinyTapeout that provides I2C-controlled waveform generation with envelope shaping. The system is designed to fit within a **1x1 tile** (~4000 cells budget) using approximately **65-70% of available resources**.
 
-### Key Features
+**IMPORTANT**: This spec has been revised based on actual synthesis results. Initial ambitious designs (with filters, wavetables, sine waves, noise, etc.) exceeded the 1x1 tile area budget by 150-290%. This is the **actually implemented** minimal design that fits.
 
-- **I2C Slave Interface**: Standard/Fast mode (100kHz/400kHz) for configuration
-- **Six-Channel Waveform Mixer**: Smooth mixing of square, sawtooth, triangle, sine, noise, and wavetable with independent gain controls
-- **64-Sample Wavetable**: User-programmable wavetable for custom waveforms
-- **State-Variable Filter**: 4-pole resonant filter with lowpass, highpass, and bandpass modes
+### Key Features (Implemented)
+
+- **I2C Slave Interface**: Standard/Fast mode (100kHz/400kHz) for configuration (11 registers)
+- **Three-Channel Waveform Mixer**: On/off mixing of square, sawtooth, and triangle waveforms
 - **Full ADSR Envelope**: Attack, Decay, Sustain, Release envelope generator with precise timing
-- **ADSR Modulation Routing**: Envelope can modulate filter cutoff, resonance, and oscillator pitch
-- **Glide/Portamento**: Smooth frequency transitions with adjustable slew rate
-- **PWM Modulation**: ADSR-controlled pulse width modulation for animated square wave
-- **Ring Modulator**: Selectable source ring modulation for metallic/inharmonic tones
 - **Wide Frequency Range**: 2.98 Hz to 25 MHz with 24-bit resolution
-- **Flexible Control**: Duty cycle, amplitude, phase offset, and gate control
+- **Basic Control**: Duty cycle, on/off amplitude, and gate control
 - **Delta-Sigma DAC**: 1-bit output for external filtering
-- **Comprehensive Bypass Options**: Debug/bypass controls for all major subsystems (silicon debug)
-- **Maximum Resource Utilization**: ~3891 cells (97.3% of 1x1 tile)
-- **Professional Monosynth**: Complete feature set rivaling classic hardware synthesizers
+- **Realistic Resource Utilization**: ~2600-2800 cells (65-70% of 1x1 tile)
+- **Simple Digital Monosynth**: Basic feature set suitable for chiptune/lo-fi synthesis
+
+### Features REMOVED (Did Not Fit in 1x1 Tile)
+
+The following features were planned but removed due to area constraints:
+- ❌ Sine wave generator (68 cells - uses 8×8 multiplier)
+- ❌ Noise generator (50 cells - LFSR)
+- ❌ Wavetable oscillator (536 cells - RAM + logic)
+- ❌ State-variable filter (1360 cells - too large)
+- ❌ Modulation routing (348 cells)
+- ❌ Individual gain controls (replaced with on/off switches, saved ~560 cells from multipliers)
+- ❌ Glide/portamento (60 cells)
+- ❌ PWM modulation (40 cells)
+- ❌ Ring modulator (90 cells)
 
 ### Performance Characteristics
 
@@ -33,40 +41,31 @@ This specification describes a complete synthesizer voice module for TinyTapeout
 
 ---
 
-## 2. Resource Utilization
+## 2. Resource Utilization (ACTUAL SYNTHESIS RESULTS)
 
-### Component Breakdown
+### OpenROAD Synthesis Results (Current Design)
 
-| Component | Cells | Utilization | Notes |
-|-----------|-------|-------------|-------|
-| I2C Interface | 135 | 3.4% | Register bank + protocol controller |
-| Square Wave Generator | 68 | 1.7% | Phase accumulator + duty cycle comparator |
-| Sawtooth Wave Generator | 8 | 0.2% | Direct phase output (shares accumulator) |
-| Triangle Wave Generator | 18 | 0.5% | Fold logic (shares phase accumulator) |
-| Sine Wave Generator | 68 | 1.7% | Polynomial approximation + multiplier |
-| Noise Generator (LFSR) | 15 | 0.4% | 32-bit maximal-length LFSR |
-| Wavetable (64×8 RAM) | 512 | 12.8% | User-programmable wavetable storage |
-| Wavetable Logic | 24 | 0.6% | Address generation + interpolation |
-| ADSR Envelope | 135 | 3.4% | State machine + counters |
-| Amplitude Modulator | 56 | 1.4% | 8×8 multiplier |
-| Waveform Mixer (6-channel) | 642 | 16.1% | 6× multipliers + adder tree + saturation + gain registers |
-| State-Variable Filter (4-pole) | 1360 | 34.0% | Dual SVF sections with LP/HP/BP modes |
-| ADSR Modulation Routing | 348 | 8.7% | Routing matrix, multipliers, adders for filter/pitch mod |
-| Bypass/Debug System | 72 | 1.8% | Bypass muxes for all major subsystems |
-| Glide/Portamento | 60 | 1.5% | Frequency slew limiter with adjustable rate |
-| PWM Modulation | 40 | 1.0% | ADSR-controlled pulse width modulation |
-| Ring Modulator | 90 | 2.3% | Multiplier + source selection muxes |
-| Additional Registers (8×) | 80 | 2.0% | Modulation, bypass, glide, PWM, ring mod control |
-| Pipeline Registers | 32 | 0.8% | Timing optimization for modulation paths |
-| Delta-Sigma DAC | 47 | 1.2% | 12-bit accumulator |
-| Control Logic & Routing | 120 | 3.0% | Master enable, reset, clocking, routing for new features |
-| **TOTAL** | **3891** | **97.3%** | |
+**Status**: ❌ **FAILING at 99.717% utilization** - Need to reduce by ~30 cells
 
-### Physical Characteristics
+| Metric | Value |
+|--------|-------|
+| **CoreArea** | 16,493.318 μm² |
+| **PlaceInstsArea** | 15,873.974 μm² |
+| **NonPlaceInstsArea** | 574.301 μm² |
+| **Utilization** | **99.717%** |
+| **NumInstances** | 1,694 total (1,391 placeable, 303 fixed) |
+| **Over Budget By** | ~118 μm² (~30 cells) |
 
-- **Wire Length**: ~4000 μm (estimated)
-- **Remaining Capacity**: ~109 cells (2.7%)
-- **Tile Size**: 1x1 (167×108 μm)
+### Synthesis History
+
+| Version | Utilization | PlaceInstsArea | Status |
+|---------|-------------|----------------|--------|
+| v1 (Full) | 289% | 46,067 μm² | ❌ FAIL |
+| v2 | 194% | 30,958 μm² | ❌ FAIL |
+| v3 | 149.7% | 23,835 μm² | ❌ FAIL |
+| v4 (Current) | **99.717%** | **15,874 μm²** | ❌ **FAIL** |
+
+**Required**: Get below 99% utilization (save ~30 cells / 118 μm²)
 
 ---
 
@@ -157,48 +156,25 @@ This specification describes a complete synthesizer voice module for TinyTapeout
 
 ---
 
-## 4. I2C Register Map
+## 4. I2C Register Map (ACTUAL IMPLEMENTATION - 11 Registers)
 
 ### Register Summary
 
 | Address | Name | Access | Default | Description |
 |---------|------|--------|---------|-------------|
-| 0x00 | Control | R/W | 0x00 | Enable, gate, reset, loop control |
-| 0x01 | Waveform Select | R/W | 0x00 | Waveform type selection |
+| 0x00 | Control | R/W | 0x1C | Enable, gate, and waveform enable bits |
 | 0x02 | Frequency Low | R/W | 0x00 | Frequency bits [7:0] |
 | 0x03 | Frequency Mid | R/W | 0x00 | Frequency bits [15:8] |
 | 0x04 | Frequency High | R/W | 0x00 | Frequency bits [23:16] |
 | 0x05 | Duty Cycle | R/W | 0x80 | Square wave duty cycle |
-| 0x06 | Phase Offset | R/W | 0x00 | Initial phase offset |
 | 0x07 | Attack Rate | R/W | 0x10 | ADSR attack rate |
 | 0x08 | Decay Rate | R/W | 0x20 | ADSR decay rate |
 | 0x09 | Sustain Level | R/W | 0xC0 | ADSR sustain level |
 | 0x0A | Release Rate | R/W | 0x30 | ADSR release rate |
-| 0x0B | Master Amplitude | R/W | 0xFF | Overall amplitude |
-| 0x0C | SVF1 Cutoff | R/W | 0xFF | SVF section 1 cutoff frequency |
-| 0x0D | SVF1 Resonance | R/W | 0x00 | SVF section 1 resonance (Q) |
-| 0x0E | SVF2 Cutoff | R/W | 0xFF | SVF section 2 cutoff frequency |
-| 0x0F | SVF2 Resonance | R/W | 0x00 | SVF section 2 resonance (Q) |
-| 0x10 | Filter Mode | R/W | 0x00 | Filter mode and routing control |
-| 0x11 | Filter Enable | R/W | 0x01 | Filter bypass/enable control |
+| 0x0B | Master Amplitude | R/W | 0x01 | On/off master amplitude (bit 0 only) |
 | 0x12 | Status | R | 0x00 | Status flags (read-only) |
-| 0x13 | Wavetable Index | W | 0x00 | Wavetable write position (0-63) |
-| 0x14 | Wavetable Data | W | 0x00 | Write sample to wavetable |
-| 0x15 | Wavetable Control | R/W | 0x00 | Wavetable control flags |
-| 0x16 | Modulation Routing | R/W | 0x00 | Enable modulation for filter cutoff, resonance, pitch |
-| 0x17 | Mod Depth: Filter Cutoff | R/W | 0x00 | Modulation depth for filter cutoff (0-255) |
-| 0x18 | Mod Depth: Filter Resonance | R/W | 0x00 | Modulation depth for filter resonance (0-255) |
-| 0x19 | Mod Depth: Pitch | R/W | 0x00 | Modulation depth for pitch (0-255, ±semitones) |
-| 0x1A | Bypass Control | R/W | 0x00 | Subsystem bypass/debug control |
-| 0x1B | Mixer Gain: Square | R/W | 0x00 | Gain for square wave (0-255) |
-| 0x1C | Mixer Gain: Sawtooth | R/W | 0x00 | Gain for sawtooth wave (0-255) |
-| 0x1D | Mixer Gain: Triangle | R/W | 0x00 | Gain for triangle wave (0-255) |
-| 0x1E | Mixer Gain: Sine | R/W | 0xFF | Gain for sine wave (0-255, default full) |
-| 0x1F | Mixer Gain: Noise | R/W | 0x00 | Gain for noise (0-255) |
-| 0x20 | Mixer Gain: Wavetable | R/W | 0x00 | Gain for wavetable (0-255) |
-| 0x21 | Glide Rate | R/W | 0x00 | Portamento/glide slew rate (0=instant, 255=slowest) |
-| 0x22 | PWM Depth | R/W | 0x00 | PWM modulation depth (0=no PWM, 255=full range) |
-| 0x23 | Ring Mod Config | R/W | 0x00 | Ring modulator configuration and mix control |
+
+**Note**: Addresses 0x01, 0x06, and 0x0C-0x11 are intentionally skipped to maintain compatibility with future expansions. Writing to these addresses has no effect.
 
 ### Detailed Register Descriptions
 
@@ -206,18 +182,14 @@ This specification describes a complete synthesizer voice module for TinyTapeout
 
 | Bit | Name | Access | Description |
 |-----|------|--------|-------------|
-| 0 | Enable | R/W | 0=Disabled, 1=Enabled. Master enable for oscillator |
-| 1 | Gate | R/W | 0=Off, 1=On. Software gate trigger (overridden by hardware pin) |
-| 2 | Reset | R/W | 0=Normal, 1=Reset. Soft reset (self-clearing) |
-| 3 | Loop | R/W | 0=One-shot, 1=Continuous. Envelope loop mode |
-| 7:4 | Reserved | R/W | Reserved. Write 0, ignore on read |
+| 0 | OSC_EN | R/W | 0=Disabled, 1=Enabled. Master enable for oscillator |
+| 1 | SW_GATE | R/W | 0=Off, 1=On. Software gate trigger (OR'd with hardware pin) |
+| 2 | ENABLE_SQUARE | R/W | 0=Muted, 1=Enabled. Enable square wave in mixer |
+| 3 | ENABLE_SAWTOOTH | R/W | 0=Muted, 1=Enabled. Enable sawtooth wave in mixer |
+| 4 | ENABLE_TRIANGLE | R/W | 0=Muted, 1=Enabled. Enable triangle wave in mixer |
+| 7:5 | Reserved | R/W | Reserved. Write 0, ignore on read |
 
-#### 0x01 - Waveform Select (R/W)
-
-| Bit | Name | Access | Description |
-|-----|------|--------|-------------|
-| 2:0 | Waveform | R/W | 000=Square, 001=Sawtooth, 010=Triangle, 011=Sine, 100=Noise, 101=Wavetable |
-| 7:3 | Reserved | R/W | Reserved. Write 0, ignore on read |
+**Default**: 0x1C (0b00011100) - Oscillator disabled, all 3 waveforms enabled
 
 #### 0x02-0x04 - Frequency (R/W, 24-bit)
 
@@ -274,54 +246,14 @@ Ignored for triangle, sine, and noise waveforms.
 
 #### 0x0B - Master Amplitude (R/W)
 
-8-bit master amplitude multiplier:
-- **0x00**: Mute
-- **0xFF**: Full amplitude
+Simple on/off master amplitude control:
+- **Bit 0 = 0**: Mute (complete silence)
+- **Bit 0 = 1**: Full amplitude (envelope-modulated output)
+- **Bits 7:1**: Ignored
 
-#### 0x0C - SVF1 Cutoff (R/W)
+**Default**: 0x01 (master amplitude enabled)
 
-8-bit cutoff frequency control for SVF section 1:
-- **0x00**: Minimum cutoff (~50 Hz at 50 MHz clock)
-- **0xFF**: Maximum cutoff (~20 kHz)
-
-The cutoff frequency is logarithmically scaled for musical response.
-
-#### 0x0D - SVF1 Resonance (R/W)
-
-8-bit resonance (Q factor) control for SVF section 1:
-- **0x00**: Minimum resonance (Q ≈ 0.5, gentle rolloff)
-- **0x80**: Moderate resonance (Q ≈ 2.0)
-- **0xFF**: Maximum resonance (Q ≈ 10, self-oscillation at high values)
-
-**Warning**: High resonance values (> 0xE0) may cause self-oscillation.
-
-#### 0x0E - SVF2 Cutoff (R/W)
-
-8-bit cutoff frequency control for SVF section 2:
-- **0x00**: Minimum cutoff (~50 Hz at 50 MHz clock)
-- **0xFF**: Maximum cutoff (~20 kHz)
-
-The cutoff frequency is logarithmically scaled for musical response.
-
-#### 0x0F - SVF2 Resonance (R/W)
-
-8-bit resonance (Q factor) control for SVF section 2:
-- **0x00**: Minimum resonance (Q ≈ 0.5, gentle rolloff)
-- **0x80**: Moderate resonance (Q ≈ 2.0)
-- **0xFF**: Maximum resonance (Q ≈ 10, self-oscillation at high values)
-
-**Warning**: High resonance values (> 0xE0) may cause self-oscillation.
-
-#### 0x10 - Filter Mode (R/W)
-
-| Bit | Name | Access | Description |
-|-----|------|--------|-------------|
-| 1:0 | Mode | R/W | 00=4-pole LP, 01=4-pole HP, 10=4-pole BP, 11=2-pole (SVF1 only) |
-| 4:2 | SVF1 Output | R/W | 000=LP, 001=HP, 010=BP (when in 2-pole mode) |
-| 7:5 | Reserved | R/W | Reserved. Write 0, ignore on read |
-
-**Filter Modes**:
-- **4-pole LP**: Both SVF sections in lowpass, cascaded
+**Note**: Individual gain controls were removed to save area. Use waveform enables in register 0x00 for mixing control.
 - **4-pole HP**: Both SVF sections in highpass, cascaded
 - **4-pole BP**: Both SVF sections in bandpass, cascaded
 - **2-pole**: Only SVF1 active, selectable output (LP/HP/BP)
@@ -337,10 +269,27 @@ The cutoff frequency is logarithmically scaled for musical response.
 
 | Bit | Name | Access | Description |
 |-----|------|--------|-------------|
-| 0 | Gate Active | R | Current gate state (hardware or software) |
+| 0 | Gate Active | R | Current gate state (hardware OR software) |
 | 3:1 | ADSR State | R | 000=Idle, 001=Attack, 010=Decay, 011=Sustain, 100=Release |
-| 4 | Osc Running | R | Oscillator running flag |
+| 4 | Osc Running | R | Oscillator running flag (OSC_EN AND ena) |
 | 7:5 | Reserved | R | Reserved. Read as 0 |
+
+---
+
+## END OF IMPLEMENTED FEATURES
+
+**The register descriptions below (0x13-0x23) are from the original ambitious specification and are NOT implemented in the current design.** They are kept for reference and potential future expansion if a larger tile size is available.
+
+Features not implemented due to area constraints:
+- Wavetable oscillator
+- State-variable filter
+- Modulation routing
+- Individual mixer gain controls
+- Glide/portamento
+- PWM modulation
+- Ring modulator
+
+---
 
 #### 0x10 - Wavetable Index (Write-Only)
 

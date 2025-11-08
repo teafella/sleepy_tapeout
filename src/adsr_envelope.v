@@ -84,7 +84,7 @@ module adsr_envelope (
     // ========================================
     reg gate_prev;
     wire gate_rising = gate && !gate_prev;
-    wire gate_falling = !gate && gate_prev;
+    // gate_falling removed - unused (saves 1 AND gate)
 
     // ========================================
     // State Machine
