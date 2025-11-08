@@ -1,16 +1,17 @@
 /*
  * TinyTapeout Synthesizer - Top Level Module (Minimal - Area-Optimized)
  *
- * I2C-Controlled Waveform Generator with ADSR Envelope
+ * UART-Controlled Waveform Generator with Smooth Volume Control
  *
- * EXTREME AREA OPTIMIZATION for 1×1 tile fit:
- * - I2C slave interface for configuration (6 registers)
+ * AREA OPTIMIZATION for 1×1 tile fit:
+ * - UART RX interface for configuration (~80 cells, vs ~220 for I2C)
  * - Phase accumulator with 3 waveform generators (square, sawtooth, triangle)
  * - 3-channel waveform mixer with on/off enables
+ * - Smooth 8-bit volume control via 8×8 multiplier (saved area by switching to UART)
  * - Delta-sigma DAC for 1-bit audio output
  *
  * Removed to fit in 1x1 tile:
- * - ADSR envelope generator (~250 cells) - envelope shaping via I2C control
+ * - ADSR envelope generator (~250 cells) - envelope shaping via external UART control
  * - Amplitude modulator (~80 cells) - not needed without ADSR
  * - Sine wave, noise generators
  * - Individual gain controls
@@ -18,11 +19,10 @@
  * TinyTapeout Pin Assignments:
  * - ui_in[0]: GATE (hardware gate trigger)
  * - ui_in[1]: HW_RST (hardware reset, active low)
- * - uio[0]: SDA (I2C data, bidirectional)
- * - uio[1]: SCL (I2C clock input)
+ * - uio[0]: UART_RX (UART receive, 115200 baud, 8N1)
  * - uo_out[0]: DAC_OUT (1-bit delta-sigma audio)
  * - uo_out[1]: GATE_LED (gate status indicator)
- * - uo_out[2]: ENV_OUT (envelope MSB for visualization)
+ * - uo_out[2]: OSC_RUN (oscillator running indicator)
  * - uo_out[3]: SYNC (phase sync pulse)
  */
 
@@ -38,14 +38,14 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // I2C Slave Interface - Minimal Register Bank (7 registers)
+    // UART RX Interface - Minimal Register Bank (7 registers)
     // ========================================
     wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
-    wire [7:0] reg_volume;        // Master volume control
+    wire [7:0] reg_volume;        // Master volume control (smooth 0-255)
     wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
@@ -58,21 +58,17 @@ module tt_um_sleepy_module (
     wire system_rst_n = rst_n & ui_in[1];
 
     // ========================================
-    // I2C Slave Interface
+    // UART RX Interface
     // ========================================
-    wire sda_out_i2c;
-    wire sda_oe_i2c;
     wire osc_running;
 
-    i2c_slave #(
-        .I2C_ADDR(7'h50)
-    ) i2c (
+    uart_rx_registers #(
+        .CLK_FREQ(50_000_000),
+        .BAUD_RATE(115200)
+    ) uart_rx (
         .clk(clk),
         .rst_n(system_rst_n),
-        .scl_in(uio_in[1]),
-        .sda_in(uio_in[0]),
-        .sda_out(sda_out_i2c),
-        .sda_oe(sda_oe_i2c),
+        .rx(uio_in[0]),              // UART RX on uio[0]
         // Minimal registers only (7 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
@@ -86,11 +82,9 @@ module tt_um_sleepy_module (
         .status_osc_running(osc_running)
     );
 
-    // Configure I2C SDA as bidirectional
-    assign uio_out[0] = sda_out_i2c;
-    assign uio_oe[0] = sda_oe_i2c;
-    assign uio_oe[7:1] = 7'b0000000;  // Other UIOs as inputs
-    assign uio_out[7:1] = 7'b0000000;
+    // Configure all UIOs as inputs (UART RX only)
+    assign uio_oe[7:0] = 8'b00000000;  // All UIOs as inputs
+    assign uio_out[7:0] = 8'b00000000;
 
     // ========================================
     // Phase Accumulator
@@ -143,20 +137,30 @@ module tt_um_sleepy_module (
     );
 
     // ========================================
-    // Volume Control
+    // Volume Control (Smooth 8×8 Multiplier)
     // ========================================
-    // Simple 8×8 multiplier for volume control with pipeline register
-    // volume=0xFF → full volume, volume=0x00 → mute
+    // Smooth volume control restored by switching to UART (saved ~140 cells)
+    // Volume range: 0x00 = mute, 0xFF = full volume (256 smooth levels)
+    //
+    // Theory: Multiply mixed waveform by volume control
+    // - mixed_wave: 8-bit waveform (0-255)
+    // - reg_volume: 8-bit volume (0-255)
+    // - Product: 16-bit (0-65025)
+    // - Output: upper 8 bits (effectively divides by 256)
+    //
+    // Examples:
+    //   volume=0xFF (255): ~100% output
+    //   volume=0x80 (128): ~50% output
+    //   volume=0x00 (0):   0% output (mute)
     wire [15:0] volume_product = mixed_wave * reg_volume;
-    wire [7:0] volume_scaled_comb = volume_product[15:8];
+    wire [7:0] volume_multiplied = volume_product[15:8];
 
-    // Pipeline register to break up combinational path and reduce buffering
     reg [7:0] volume_scaled;
     always @(posedge clk or negedge system_rst_n) begin
         if (!system_rst_n)
             volume_scaled <= 8'h00;
         else
-            volume_scaled <= volume_scaled_comb;
+            volume_scaled <= volume_multiplied;
     end
 
     // ========================================

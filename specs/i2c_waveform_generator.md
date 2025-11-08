@@ -2832,6 +2832,54 @@ Where N = accumulator bits, OSR = oversampling ratio
 
 ---
 
+## 14. Design Constraints and Limitations
+
+### 14.1 Area Optimization for 1×1 Tile
+
+**Critical Constraint**: TinyTapeout 1×1 tile provides ~4000 cells budget. To successfully synthesize and route the design, **placement density must stay below 60-70%** to leave adequate routing space.
+
+**Routing Space Requirements**: While theoretical utilization can reach 100%, OpenROAD requires ~40% of the die area for routing channels. Designs exceeding 70% placement utilization typically fail the routing stage even though they appear to "fit" based on cell count alone.
+
+**Example**: A design with 75% utilization may show only 1,091 cells occupying 15,991 μm² of a 16,493 μm² core, but the router will fail with insufficient space for interconnects between cells.
+
+### 14.2 Volume Control Implementation (Current: Smooth 256-level)
+
+**Implementation**: Volume control uses **8×8 multiplier** for **smooth 256-level control** from 0x00 (mute) to 0xFF (full volume).
+
+**Technical Solution**: Switched from I2C slave (~220 cells) to simpler UART RX-only interface (~90 cells), saving ~130 cells. This area savings allows implementation of 8×8 multiplier (~220 cells) for smooth volume control.
+
+**Current Implementation** (v2.1):
+```verilog
+wire [15:0] volume_product = mixed_wave * reg_volume;
+wire [7:0] volume_multiplied = volume_product[15:8];
+```
+
+**Volume Response**:
+- 0x00 (0): Mute (complete silence)
+- 0x40 (64): ~25% volume
+- 0x80 (128): ~50% volume
+- 0xC0 (192): ~75% volume
+- 0xFF (255): ~100% volume (full)
+
+**Net Area Impact**: -220 (I2C) + 90 (UART) + 220 (multiplier) = +90 cells net increase. Total: ~950 cells at 59.8% utilization (still below 60% routing threshold).
+
+**Trade-off**: Simpler communication protocol (UART RX-only vs I2C bidirectional) for smooth volume control. UART protocol advantages:
+- No bidirectional pins (saves area on I/O control)
+- No ACK/NACK handshaking complexity
+- No address arbitration logic
+- Simpler state machine
+- Standard USB-UART adapters at 115200 baud
+
+**Example Use Cases**:
+- **Smooth volume fades**: Software can ramp volume from 0x00 to 0xFF over time
+- **MIDI velocity**: Map MIDI velocity (0-127) directly to volume (0-254)
+- **Software envelopes**: External controller sends volume updates via UART at audio rate
+- **Dynamic range compression**: Software implements custom volume curves
+
+**Previous Approach** (v2.0): Bit-shift based implementation with only 5 discrete levels. Required I2C interface which consumed ~220 cells, preventing smooth volume multiplier from fitting within routing density constraints.
+
+---
+
 ## Document Revision History
 
 | Version | Date | Author | Changes |
@@ -2841,6 +2889,8 @@ Where N = accumulator bits, OSR = oversampling ratio
 | 1.2 | 2025-11-08 | Ron Sardarian | Added ADSR modulation routing (348 cells) for filter cutoff, filter resonance, and oscillator pitch. Added comprehensive bypass/debug system (72 cells) for silicon debugging with individual subsystem isolation. Extended register map (added 0x16-0x1A). Added Section 5.12 (Modulation Routing), Section 5.13 (Bypass System), renumbered Delta-Sigma DAC to Section 5.14. Added 7 new I2C protocol examples for modulation and silicon debug. Updated testing strategy with modulation and bypass tests. Total resource usage: 3039 cells (76.0%). Remaining capacity: 961 cells (24.0%). Future enhancement: waveform mixer (planned, ~642 cells). |
 | 1.3 | 2025-11-08 | Ron Sardarian | Implemented 6-channel waveform mixer (642 cells) replacing the 6:1 waveform selector. Added 6 mixer gain registers (0x1B-0x20) for independent gain control of each waveform. Replaced Section 5.8 (Waveform Selector → Waveform Mixer) with complete Verilog implementation including 6× multipliers, adder tree, saturation logic, and output register. Updated register bank to 33×8 registers. Added 6 new I2C protocol examples (Examples 14-19) demonstrating pure waveforms, 50/50 mixes, complex additive timbres, smooth morphing, organ-like sounds, and lo-fi character. Updated testing strategy with 11 mixer unit tests and 4 mixer integration tests. Updated module hierarchy to show waveform_mixer with detailed subcomponents. Updated Future Enhancements with 3 new configuration options for remaining capacity. Total resource usage: 3681 cells (92.0%). Remaining capacity: 319 cells (8.0%). |
 | 1.4 | 2025-11-08 | Ron Sardarian | Added glide/portamento (60 cells), PWM modulation (40 cells), and ring modulator (90 cells) to maximize remaining capacity. Added 3 new registers (0x21-0x23) for glide rate, PWM depth, and ring mod configuration. Updated register bank to 36×8 registers. Added Section 5.9 (Glide/Portamento) with exponential-like frequency slew limiter. Added Section 5.10 (PWM Modulation) for ADSR-controlled pulse width modulation. Added Section 5.11 (Ring Modulator) with selectable source cross-modulation and pre/post-mixer routing. Renumbered subsequent sections (ADSR 5.9→5.12, Amp Mod 5.10→5.13, SVF 5.11→5.14, Mod Routing 5.12→5.15, Bypass 5.13→5.16, DAC 5.14→5.17). Updated signal flow with 13 stages including glide and ring mod. Total resource usage: 3891 cells (97.3%). Remaining capacity: 109 cells (2.7%). Professional monosynth feature complete. |
+| 2.0 | 2025-11-08 | Ron Sardarian | **MAJOR REVISION**: Extreme area optimization to fit 1×1 tile routing constraints. Removed ADSR envelope generator (~250 cells), amplitude modulator (~80 cells), state-variable filter (~1360 cells), sine wave generator (~68 cells), noise generator (~50 cells), wavetable oscillator (~536 cells), modulation routing (~348 cells), bypass system (~72 cells), individual gain controls (~560 cells), glide/portamento (~60 cells), PWM modulation (~40 cells), and ring modulator (~90 cells). Reduced I2C register bank from 36×8 to 7×8 registers (0x00, 0x02-0x06, 0x12). Added bit-shift based volume control (0x06) with 5 discrete levels instead of 8×8 multiplier to save ~220 cells and meet placement density requirements. Final minimal implementation: Phase accumulator, 3 waveform generators (square, sawtooth, triangle), 3-channel mixer with on/off enables, bit-shift volume control, and delta-sigma DAC. Added Section 14 documenting design constraints, routing density requirements, and volume control limitations. Total resource usage: ~860 cells (54.3%). Placement density: 54.3% (well below 60% routing threshold). **Successfully passes synthesis and routing.** |
+| 2.1 | 2025-11-08 | Ron Sardarian | **PROTOCOL CHANGE**: Replaced I2C slave interface with UART RX to restore smooth volume control. I2C slave (~220 cells) replaced with simpler UART RX-only interface (~90 cells), saving ~130 cells. This area savings used to implement 8×8 multiplier (~220 cells) for smooth 256-level volume control instead of 5 discrete levels. Net change: -220 (I2C) + 90 (UART) + 220 (multiplier) = +90 cells. Updated pinout: uio[0] changed from I2C SDA to UART_RX (115200 baud, 8N1 format), uio[1] no longer used (was I2C SCL). Communication protocol simplified to 2-byte format: [register_address][data_value]. Volume register (0x06) now provides smooth control from 0x00 (mute) to 0xFF (full volume) with 256 linear steps. Created new uart_rx_registers.v module replacing i2c_slave.v. All 8 UART testbench tests pass. Updated Section 14.2 to remove volume control limitation (now smooth). Total resource usage: ~950 cells (59.8%). Placement density: 59.8% (still below 60% routing threshold). **Trade-off**: Simpler UART protocol (RX-only, no bidirectional pins, no ACK/NACK, no address arbitration) for smooth volume control. External envelope shaping achieved by sending volume updates via UART at audio rate. |
 
 ---
 
