@@ -5,7 +5,14 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_sleepy_module.v
+PROJECT_SOURCES = tt_um_sleepy_module.v \
+                  i2c_slave.v \
+                  phase_accumulator.v \
+                  waveform_generators.v \
+                  waveform_mixer.v \
+                  adsr_envelope.v \
+                  amplitude_modulator.v \
+                  delta_sigma_dac.v
 
 ifneq ($(GATES),yes)
 
