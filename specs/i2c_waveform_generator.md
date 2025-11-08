@@ -1694,11 +1694,9 @@ assign dac_out = accumulator[11];  // MSB is output
 
 | Pin | Name | Type | Description |
 |-----|------|------|-------------|
-| ui_in[0] | SCL | Digital In | I2C clock input |
-| ui_in[1] | SDA | Digital In/Out | I2C data (input path, needs bidir) |
-| ui_in[2] | GATE | Digital In | Hardware gate trigger |
-| ui_in[3] | HW_RST | Digital In | Hardware reset (active low) |
-| ui_in[7:4] | - | - | Reserved/unused |
+| ui_in[0] | GATE | Digital In | Hardware gate trigger |
+| ui_in[1] | HW_RST | Digital In | Hardware reset (active low) |
+| ui_in[7:2] | - | - | Reserved/unused |
 
 #### Dedicated Outputs (uo_out[7:0])
 
@@ -1715,15 +1713,19 @@ assign dac_out = accumulator[11];  // MSB is output
 | Pin | Name | Direction | Description |
 |-----|------|-----------|-------------|
 | uio[0] | SDA | Bidirectional | I2C data (bidirectional) |
-| uio[7:1] | - | - | Optional parallel output/debug |
+| uio[1] | SCL | Input | I2C clock input from carrier MCU |
+| uio[7:2] | - | - | Optional parallel output/debug |
+
+**Note**: I2C pins use UIOs because these are connected to the carrier board's microcontroller on Tiny Tapeout PCBs.
 
 ### External Connections
 
 **Minimal Setup**:
 ```
-I2C Master → SCL (ui_in[0])
-I2C Master ↔ SDA (ui_in[1] or uio[0])
-Gate Switch → GATE (ui_in[2])
+I2C Master → SCL (uio[1])
+I2C Master ↔ SDA (uio[0])
+Gate Switch → GATE (ui_in[0])
+Reset Switch → HW_RST (ui_in[1])
 DAC_OUT (uo_out[0]) → RC Filter → Audio Out
 ```
 
@@ -1833,7 +1835,7 @@ module tt_um_sleepy_module (
     i2c_slave i2c (
         .clk(clk),
         .rst_n(rst_n),
-        .scl(ui_in[0]),
+        .scl(uio_in[1]),
         .sda(uio_in[0]),
         .sda_out(uio_out[0]),
         .sda_oe(uio_oe[0]),
@@ -1886,7 +1888,7 @@ module tt_um_sleepy_module (
     adsr_envelope adsr (
         .clk(clk),
         .rst_n(rst_n),
-        .gate(ui_in[2] | reg_control[1]),
+        .gate(ui_in[0] | reg_control[1]),
         .attack_rate(reg_attack),
         .decay_rate(reg_decay),
         .sustain_level(reg_sustain),
@@ -1965,7 +1967,7 @@ module tt_um_sleepy_module (
     );
     
     // Status outputs
-    assign uo_out[1] = ui_in[2] | reg_control[1];  // Gate LED
+    assign uo_out[1] = ui_in[0] | reg_control[1];  // Gate LED
     assign uo_out[2] = envelope_value[7];           // Envelope MSB
     assign uo_out[3] = phase[23];                   // Sync pulse
     
@@ -2668,6 +2670,12 @@ create_clock -name clk -period 20.0 [get_ports clk]
 ```
 
 **Input Delays** (for I2C):
+```sdc
+set_input_delay -clock clk -max 5.0 [get_ports {uio_in[0] uio_in[1]}]
+set_input_delay -clock clk -min 1.0 [get_ports {uio_in[0] uio_in[1]}]
+```
+
+**Input Delays** (for GATE/HW_RST):
 ```sdc
 set_input_delay -clock clk -max 5.0 [get_ports {ui_in[0] ui_in[1]}]
 set_input_delay -clock clk -min 1.0 [get_ports {ui_in[0] ui_in[1]}]

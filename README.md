@@ -1,42 +1,61 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# Sleepy Chip - Digital Monosynth for Tiny Tapeout
 
-- [Read the documentation for project](docs/info.md)
+A complete digital monosynth voice featuring multi-waveform oscillator, ADSR envelope, and delta-sigma DAC audio output, designed to fit in a 1×1 Tiny Tapeout tile.
 
-## What is Tiny Tapeout?
+## 🎵 Current Status: Phase 1 Complete
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+### Implemented Modules ✅
+- **24-bit Phase Accumulator** - High-resolution DDS core (2.98 Hz - 25 MHz)
+- **Multi-Waveform Generator** - 5 waveforms with excellent quality:
+  - Square wave with variable PWM (0-100% duty cycle)
+  - Sawtooth wave (all harmonics)
+  - Triangle wave (odd harmonics)
+  - Sine wave (<3% error polynomial approximation)
+  - Noise (32-bit LFSR, 4.29B sample period)
+- **Delta-Sigma DAC** - First-order 1-bit modulator (±0.1% accuracy)
 
-To learn more and get started, visit https://tinytapeout.com.
+### Test Results 🧪
+All modules validated with comprehensive testbenches:
+- ✅ Phase accumulator frequency accuracy: <0.25% @ 440 Hz & 1 kHz
+- ✅ PWM duty cycles: All 0-100% within ±1%
+- ✅ Delta-sigma DAC: Tracks input amplitude within ±0.1%
+- ✅ All 5 waveforms: End-to-end validated with DAC output
+- ✅ Noise generator: Full dynamic range, proper randomness
 
-## Set up your Verilog project
+### Resource Usage 📊
+**Phase 1:** ~211 cells (~5.3% of 1x1 tile)
+- Phase Accumulator: ~60 cells
+- Waveform Generators: ~101 cells
+- Delta-Sigma DAC: ~50 cells
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties.
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test](test) for more information.
+**Phase 2 Target:** ~3,891 cells (97.3% of 1x1 tile)
 
-The GitHub action will automatically build the ASIC files using LibreLane.
+## 📚 Documentation
 
-## Enable GitHub actions to build the results page
+- [Project Datasheet](docs/info.md) - Complete project documentation
+- [Full Specification](specs/i2c_waveform_generator.md) - Detailed technical spec (2800+ lines)
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+## 🛠️ Quick Start
 
-## Resources
+### Running Tests
+```bash
+# Test all waveforms end-to-end
+cd /Users/ronaldsardarian/Documents/git/sleepy_tapeout
+iverilog -g2012 -o test/waveforms_e2e.out test/test_waveforms_e2e.v src/*.v
+cd test && ./waveforms_e2e.out
+```
 
+All tests should PASS showing accurate waveform generation and DAC conversion.
+
+## 🏗️ Project Resources
+
+- [Tiny Tapeout](https://tinytapeout.com)
 - [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+- [Community Discord](https://tinytapeout.com/discord)
+- [Build Locally](https://www.tinytapeout.com/guides/local-hardening/)
 
-## What next?
+---
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+**Status**: Phase 1 Complete ✅ | **Author**: Ron Sardarian | **Technology**: Sky130 PDK
