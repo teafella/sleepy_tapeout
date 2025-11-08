@@ -91,19 +91,19 @@ module test_waveform_mixer;
         // Test 1: Single waveform at full gain
         $display("--- Test 1: Single Waveform (Square) at Full Gain ---");
         square_in = 8'hFF;
-        gain_square = 8'hFF;
+        gain_square = 8'hFF;  // 11 in upper 2 bits = full volume
         #40;  // Wait for output to settle (1 clock cycle + margin)
-        // Note: 255×255/256 = 254.00 → 0xFE (expected due to integer division)
-        if (mixed_out >= 8'hFE && mixed_out <= 8'hFF) begin
+        // Note: With bit-shift gain, 0xFF at full gain = 0xFF
+        if (mixed_out == 8'hFF) begin
             $display("✓ PASS: Square at full gain = 0x%02X", mixed_out);
         end else begin
-            $display("✗ FAIL: Square at full gain = 0x%02X (expected 0xFE-0xFF)", mixed_out);
+            $display("✗ FAIL: Square at full gain = 0x%02X (expected 0xFF)", mixed_out);
         end
 
         // Test 2: Half gain
         $display("\n--- Test 2: Square at Half Gain ---");
         square_in = 8'hFF;
-        gain_square = 8'h80;  // 128/256 = 50%
+        gain_square = 8'h80;  // 10 in upper 2 bits = 1/2 volume (>> 1)
         gain_sawtooth = 0;
         gain_triangle = 0;
         gain_sine = 0;

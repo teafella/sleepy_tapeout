@@ -8,26 +8,26 @@
 :vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/v2005_math.vpi";
 :vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/va_math.vpi";
 :vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/v2009.vpi";
-S_0x11f6289d0 .scope package, "$unit" "$unit" 2 1;
+S_0x140e2c350 .scope package, "$unit" "$unit" 2 1;
  .timescale 0 0;
-S_0x11f62da20 .scope module, "test_waveform_mixer" "test_waveform_mixer" 3 14;
+S_0x140e2bef0 .scope module, "test_waveform_mixer" "test_waveform_mixer" 3 14;
  .timescale -9 -12;
-v0x11f64ec70_0 .var "clk", 0 0;
-v0x11f64ed30_0 .var "gain_noise", 7 0;
-v0x11f64edc0_0 .var "gain_sawtooth", 7 0;
-v0x11f64ee50_0 .var "gain_sine", 7 0;
-v0x11f64eee0_0 .var "gain_square", 7 0;
-v0x11f64efb0_0 .var "gain_triangle", 7 0;
-v0x11f64f060_0 .var "gain_wavetable", 7 0;
-v0x11f64f110_0 .net "mixed_out", 7 0, L_0x11f6522b0;  1 drivers
-v0x11f64f1c0_0 .var "noise_in", 7 0;
-v0x11f64f2f0_0 .var "rst_n", 0 0;
-v0x11f64f380_0 .var "sawtooth_in", 7 0;
-v0x11f64f410_0 .var "sine_in", 7 0;
-v0x11f64f4c0_0 .var "square_in", 7 0;
-v0x11f64f570_0 .var "triangle_in", 7 0;
-v0x11f64f620_0 .var "wavetable_in", 7 0;
-S_0x11f62ca10 .scope module, "dut" "waveform_mixer" 3 40, 4 24 0, S_0x11f62da20;
+v0x140e4dad0_0 .var "clk", 0 0;
+v0x140e4db90_0 .var "gain_noise", 7 0;
+v0x140e4dc20_0 .var "gain_sawtooth", 7 0;
+v0x140e4dcb0_0 .var "gain_sine", 7 0;
+v0x140e4dd40_0 .var "gain_square", 7 0;
+v0x140e4de10_0 .var "gain_triangle", 7 0;
+v0x140e4dec0_0 .var "gain_wavetable", 7 0;
+v0x140e4df70_0 .net "mixed_out", 7 0, L_0x140e503f0;  1 drivers
+v0x140e4e020_0 .var "noise_in", 7 0;
+v0x140e4e150_0 .var "rst_n", 0 0;
+v0x140e4e1e0_0 .var "sawtooth_in", 7 0;
+v0x140e4e270_0 .var "sine_in", 7 0;
+v0x140e4e320_0 .var "square_in", 7 0;
+v0x140e4e3d0_0 .var "triangle_in", 7 0;
+v0x140e4e480_0 .var "wavetable_in", 7 0;
+S_0x140e2ba90 .scope module, "dut" "waveform_mixer" 3 40, 4 28 0, S_0x140e2bef0;
  .timescale 0 0;
     .port_info 0 /INPUT 1 "clk";
     .port_info 1 /INPUT 1 "rst_n";
@@ -44,516 +44,525 @@ S_0x11f62ca10 .scope module, "dut" "waveform_mixer" 3 40, 4 24 0, S_0x11f62da20;
     .port_info 12 /INPUT 8 "gain_noise";
     .port_info 13 /INPUT 8 "gain_wavetable";
     .port_info 14 /OUTPUT 8 "mixed_out";
-L_0x11f6522b0 .functor BUFZ 8, v0x11f64de80_0, C4<00000000>, C4<00000000>, C4<00000000>;
-v0x11f633370_0 .net *"_ivl_0", 15 0, L_0x11f64f6d0;  1 drivers
-v0x11f64b7d0_0 .net *"_ivl_10", 15 0, L_0x11f64fa90;  1 drivers
-L_0x1200785b0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64b870_0 .net/2u *"_ivl_100", 0 0, L_0x1200785b0;  1 drivers
-v0x11f64b920_0 .net *"_ivl_102", 17 0, L_0x11f651ca0;  1 drivers
-v0x11f64b9d0_0 .net *"_ivl_109", 1 0, L_0x11f651dc0;  1 drivers
-L_0x1200785f8 .functor BUFT 1, C4<00>, C4<0>, C4<0>, C4<0>;
-v0x11f64bac0_0 .net/2u *"_ivl_110", 1 0, L_0x1200785f8;  1 drivers
-L_0x120078640 .functor BUFT 1, C4<11111111>, C4<0>, C4<0>, C4<0>;
-v0x11f64bb70_0 .net/2u *"_ivl_114", 7 0, L_0x120078640;  1 drivers
-v0x11f64bc20_0 .net *"_ivl_117", 7 0, L_0x11f652000;  1 drivers
-L_0x1200780a0 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64bcd0_0 .net *"_ivl_13", 7 0, L_0x1200780a0;  1 drivers
-v0x11f64bde0_0 .net *"_ivl_14", 15 0, L_0x11f64fbd0;  1 drivers
-L_0x1200780e8 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64be90_0 .net *"_ivl_17", 7 0, L_0x1200780e8;  1 drivers
-v0x11f64bf40_0 .net *"_ivl_20", 15 0, L_0x11f64fe80;  1 drivers
-L_0x120078130 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64bff0_0 .net *"_ivl_23", 7 0, L_0x120078130;  1 drivers
-v0x11f64c0a0_0 .net *"_ivl_24", 15 0, L_0x11f650020;  1 drivers
-L_0x120078178 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c150_0 .net *"_ivl_27", 7 0, L_0x120078178;  1 drivers
-L_0x120078010 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c200_0 .net *"_ivl_3", 7 0, L_0x120078010;  1 drivers
-v0x11f64c2b0_0 .net *"_ivl_30", 15 0, L_0x11f6502b0;  1 drivers
-L_0x1200781c0 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c440_0 .net *"_ivl_33", 7 0, L_0x1200781c0;  1 drivers
-v0x11f64c4d0_0 .net *"_ivl_34", 15 0, L_0x11f650390;  1 drivers
-L_0x120078208 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c580_0 .net *"_ivl_37", 7 0, L_0x120078208;  1 drivers
-v0x11f64c630_0 .net *"_ivl_4", 15 0, L_0x11f64f830;  1 drivers
-v0x11f64c6e0_0 .net *"_ivl_40", 15 0, L_0x11f6505f0;  1 drivers
-L_0x120078250 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c790_0 .net *"_ivl_43", 7 0, L_0x120078250;  1 drivers
-v0x11f64c840_0 .net *"_ivl_44", 15 0, L_0x11f650800;  1 drivers
-L_0x120078298 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c8f0_0 .net *"_ivl_47", 7 0, L_0x120078298;  1 drivers
-v0x11f64c9a0_0 .net *"_ivl_50", 15 0, L_0x11f650a40;  1 drivers
-L_0x1200782e0 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64ca50_0 .net *"_ivl_53", 7 0, L_0x1200782e0;  1 drivers
-v0x11f64cb00_0 .net *"_ivl_54", 15 0, L_0x11f650b20;  1 drivers
-L_0x120078328 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64cbb0_0 .net *"_ivl_57", 7 0, L_0x120078328;  1 drivers
-v0x11f64cc60_0 .net *"_ivl_60", 16 0, L_0x11f650d70;  1 drivers
-L_0x120078370 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64cd10_0 .net *"_ivl_63", 0 0, L_0x120078370;  1 drivers
-v0x11f64cdc0_0 .net *"_ivl_64", 16 0, L_0x11f650f30;  1 drivers
-L_0x1200783b8 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64ce70_0 .net *"_ivl_67", 0 0, L_0x1200783b8;  1 drivers
-L_0x120078058 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v0x11f64c360_0 .net *"_ivl_7", 7 0, L_0x120078058;  1 drivers
-v0x11f64d100_0 .net *"_ivl_70", 16 0, L_0x11f650e50;  1 drivers
-L_0x120078400 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d190_0 .net *"_ivl_73", 0 0, L_0x120078400;  1 drivers
-v0x11f64d230_0 .net *"_ivl_74", 16 0, L_0x11f651240;  1 drivers
-L_0x120078448 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d2e0_0 .net *"_ivl_77", 0 0, L_0x120078448;  1 drivers
-v0x11f64d390_0 .net *"_ivl_80", 16 0, L_0x11f6514c0;  1 drivers
-L_0x120078490 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d440_0 .net *"_ivl_83", 0 0, L_0x120078490;  1 drivers
-v0x11f64d4f0_0 .net *"_ivl_84", 16 0, L_0x11f651320;  1 drivers
-L_0x1200784d8 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d5a0_0 .net *"_ivl_87", 0 0, L_0x1200784d8;  1 drivers
-v0x11f64d650_0 .net *"_ivl_90", 17 0, L_0x11f6519d0;  1 drivers
-L_0x120078520 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d700_0 .net *"_ivl_93", 0 0, L_0x120078520;  1 drivers
-v0x11f64d7b0_0 .net *"_ivl_94", 17 0, L_0x11f651a70;  1 drivers
-L_0x120078568 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
-v0x11f64d860_0 .net *"_ivl_97", 0 0, L_0x120078568;  1 drivers
-v0x11f64d910_0 .net "clk", 0 0, v0x11f64ec70_0;  1 drivers
-v0x11f64d9b0_0 .net "gain_noise", 7 0, v0x11f64ed30_0;  1 drivers
-v0x11f64da60_0 .net "gain_sawtooth", 7 0, v0x11f64edc0_0;  1 drivers
-v0x11f64db10_0 .net "gain_sine", 7 0, v0x11f64ee50_0;  1 drivers
-v0x11f64dbc0_0 .net "gain_square", 7 0, v0x11f64eee0_0;  1 drivers
-v0x11f64dc70_0 .net "gain_triangle", 7 0, v0x11f64efb0_0;  1 drivers
-v0x11f64dd20_0 .net "gain_wavetable", 7 0, v0x11f64f060_0;  1 drivers
-v0x11f64ddd0_0 .net "mixed_out", 7 0, L_0x11f6522b0;  alias, 1 drivers
-v0x11f64de80_0 .var "mixed_out_reg", 7 0;
-v0x11f64df30_0 .net "mixed_saturated", 7 0, L_0x11f652350;  1 drivers
-v0x11f64dfe0_0 .net "noise_in", 7 0, v0x11f64f1c0_0;  1 drivers
-v0x11f64e090_0 .net "overflow", 0 0, L_0x11f652110;  1 drivers
-v0x11f64e130_0 .net "product_noise", 15 0, L_0x11f6508a0;  1 drivers
-v0x11f64e1e0_0 .net "product_sawtooth", 15 0, L_0x11f64fd60;  1 drivers
-v0x11f64e290_0 .net "product_sine", 15 0, L_0x11f650510;  1 drivers
-v0x11f64e340_0 .net "product_square", 15 0, L_0x11f64f970;  1 drivers
-v0x11f64e3f0_0 .net "product_triangle", 15 0, L_0x11f650140;  1 drivers
-v0x11f64e4a0_0 .net "product_wavetable", 15 0, L_0x11f650cd0;  1 drivers
-v0x11f64e550_0 .net "rst_n", 0 0, v0x11f64f2f0_0;  1 drivers
-v0x11f64cf10_0 .net "sawtooth_in", 7 0, v0x11f64f380_0;  1 drivers
-v0x11f64cfc0_0 .net "sine_in", 7 0, v0x11f64f410_0;  1 drivers
-v0x11f64d070_0 .net "square_in", 7 0, v0x11f64f4c0_0;  1 drivers
-v0x11f64e600_0 .net "sum_01", 16 0, L_0x11f650fd0;  1 drivers
-v0x11f64e6b0_0 .net "sum_0123", 17 0, L_0x11f6518f0;  1 drivers
-v0x11f64e760_0 .net "sum_23", 16 0, L_0x11f651110;  1 drivers
-v0x11f64e810_0 .net "sum_45", 16 0, L_0x11f6517b0;  1 drivers
-v0x11f64e8c0_0 .net "sum_final_temp", 17 0, L_0x11f651ec0;  1 drivers
-v0x11f64e970_0 .net "sum_scaled", 9 0, L_0x11f651b50;  1 drivers
-v0x11f64ea20_0 .net "triangle_in", 7 0, v0x11f64f570_0;  1 drivers
-v0x11f64ead0_0 .net "wavetable_in", 7 0, v0x11f64f620_0;  1 drivers
-E_0x11f608fc0/0 .event negedge, v0x11f64e550_0;
-E_0x11f608fc0/1 .event posedge, v0x11f64d910_0;
-E_0x11f608fc0 .event/or E_0x11f608fc0/0, E_0x11f608fc0/1;
-L_0x11f64f6d0 .concat [ 8 8 0 0], v0x11f64f4c0_0, L_0x120078010;
-L_0x11f64f830 .concat [ 8 8 0 0], v0x11f64eee0_0, L_0x120078058;
-L_0x11f64f970 .arith/mult 16, L_0x11f64f6d0, L_0x11f64f830;
-L_0x11f64fa90 .concat [ 8 8 0 0], v0x11f64f380_0, L_0x1200780a0;
-L_0x11f64fbd0 .concat [ 8 8 0 0], v0x11f64edc0_0, L_0x1200780e8;
-L_0x11f64fd60 .arith/mult 16, L_0x11f64fa90, L_0x11f64fbd0;
-L_0x11f64fe80 .concat [ 8 8 0 0], v0x11f64f570_0, L_0x120078130;
-L_0x11f650020 .concat [ 8 8 0 0], v0x11f64efb0_0, L_0x120078178;
-L_0x11f650140 .arith/mult 16, L_0x11f64fe80, L_0x11f650020;
-L_0x11f6502b0 .concat [ 8 8 0 0], v0x11f64f410_0, L_0x1200781c0;
-L_0x11f650390 .concat [ 8 8 0 0], v0x11f64ee50_0, L_0x120078208;
-L_0x11f650510 .arith/mult 16, L_0x11f6502b0, L_0x11f650390;
-L_0x11f6505f0 .concat [ 8 8 0 0], v0x11f64f1c0_0, L_0x120078250;
-L_0x11f650800 .concat [ 8 8 0 0], v0x11f64ed30_0, L_0x120078298;
-L_0x11f6508a0 .arith/mult 16, L_0x11f6505f0, L_0x11f650800;
-L_0x11f650a40 .concat [ 8 8 0 0], v0x11f64f620_0, L_0x1200782e0;
-L_0x11f650b20 .concat [ 8 8 0 0], v0x11f64f060_0, L_0x120078328;
-L_0x11f650cd0 .arith/mult 16, L_0x11f650a40, L_0x11f650b20;
-L_0x11f650d70 .concat [ 16 1 0 0], L_0x11f64f970, L_0x120078370;
-L_0x11f650f30 .concat [ 16 1 0 0], L_0x11f64fd60, L_0x1200783b8;
-L_0x11f650fd0 .arith/sum 17, L_0x11f650d70, L_0x11f650f30;
-L_0x11f650e50 .concat [ 16 1 0 0], L_0x11f650140, L_0x120078400;
-L_0x11f651240 .concat [ 16 1 0 0], L_0x11f650510, L_0x120078448;
-L_0x11f651110 .arith/sum 17, L_0x11f650e50, L_0x11f651240;
-L_0x11f6514c0 .concat [ 16 1 0 0], L_0x11f6508a0, L_0x120078490;
-L_0x11f651320 .concat [ 16 1 0 0], L_0x11f650cd0, L_0x1200784d8;
-L_0x11f6517b0 .arith/sum 17, L_0x11f6514c0, L_0x11f651320;
-L_0x11f6519d0 .concat [ 17 1 0 0], L_0x11f650fd0, L_0x120078520;
-L_0x11f651a70 .concat [ 17 1 0 0], L_0x11f651110, L_0x120078568;
-L_0x11f6518f0 .arith/sum 18, L_0x11f6519d0, L_0x11f651a70;
-L_0x11f651ca0 .concat [ 17 1 0 0], L_0x11f6517b0, L_0x1200785b0;
-L_0x11f651ec0 .arith/sum 18, L_0x11f6518f0, L_0x11f651ca0;
-L_0x11f651b50 .part L_0x11f651ec0, 8, 10;
-L_0x11f651dc0 .part L_0x11f651b50, 8, 2;
-L_0x11f652110 .cmp/ne 2, L_0x11f651dc0, L_0x1200785f8;
-L_0x11f652000 .part L_0x11f651b50, 0, 8;
-L_0x11f652350 .functor MUXZ 8, L_0x11f652000, L_0x120078640, L_0x11f652110, C4<>;
-    .scope S_0x11f62ca10;
-T_0 ;
-    %wait E_0x11f608fc0;
-    %load/vec4 v0x11f64e550_0;
-    %nor/r;
-    %flag_set/vec4 8;
-    %jmp/0xz  T_0.0, 8;
+L_0x140e503f0 .functor BUFZ 8, v0x140e4ca90_0, C4<00000000>, C4<00000000>, C4<00000000>;
+L_0x148078010 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4b320_0 .net/2u *"_ivl_12", 0 0, L_0x148078010;  1 drivers
+v0x140e4b3e0_0 .net *"_ivl_14", 8 0, L_0x140e4ec80;  1 drivers
+L_0x148078058 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4b490_0 .net/2u *"_ivl_16", 0 0, L_0x148078058;  1 drivers
+v0x140e4b550_0 .net *"_ivl_18", 8 0, L_0x140e4ede0;  1 drivers
+L_0x1480780a0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4b600_0 .net/2u *"_ivl_22", 0 0, L_0x1480780a0;  1 drivers
+v0x140e4b6f0_0 .net *"_ivl_24", 8 0, L_0x140e4f090;  1 drivers
+L_0x1480780e8 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4b7a0_0 .net/2u *"_ivl_26", 0 0, L_0x1480780e8;  1 drivers
+v0x140e4b850_0 .net *"_ivl_28", 8 0, L_0x140e4f170;  1 drivers
+L_0x148078130 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4b900_0 .net/2u *"_ivl_32", 0 0, L_0x148078130;  1 drivers
+v0x140e4ba10_0 .net *"_ivl_34", 8 0, L_0x140e4f450;  1 drivers
+L_0x148078178 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4bac0_0 .net/2u *"_ivl_36", 0 0, L_0x148078178;  1 drivers
+v0x140e4bb70_0 .net *"_ivl_38", 8 0, L_0x140e4f5e0;  1 drivers
+L_0x1480781c0 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4bc20_0 .net/2u *"_ivl_42", 0 0, L_0x1480781c0;  1 drivers
+v0x140e4bcd0_0 .net *"_ivl_44", 9 0, L_0x140e4f880;  1 drivers
+L_0x148078208 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4bd80_0 .net/2u *"_ivl_46", 0 0, L_0x148078208;  1 drivers
+v0x140e4be30_0 .net *"_ivl_48", 9 0, L_0x140e4f960;  1 drivers
+L_0x148078250 .functor BUFT 1, C4<0>, C4<0>, C4<0>, C4<0>;
+v0x140e4bee0_0 .net/2u *"_ivl_52", 0 0, L_0x148078250;  1 drivers
+v0x140e4c070_0 .net *"_ivl_54", 10 0, L_0x140e4fc90;  1 drivers
+L_0x148078298 .functor BUFT 1, C4<00>, C4<0>, C4<0>, C4<0>;
+v0x140e4c100_0 .net/2u *"_ivl_56", 1 0, L_0x148078298;  1 drivers
+v0x140e4c1b0_0 .net *"_ivl_58", 10 0, L_0x140e4fdd0;  1 drivers
+v0x140e4c260_0 .net *"_ivl_63", 2 0, L_0x140e4fd30;  1 drivers
+L_0x1480782e0 .functor BUFT 1, C4<000>, C4<0>, C4<0>, C4<0>;
+v0x140e4c310_0 .net/2u *"_ivl_64", 2 0, L_0x1480782e0;  1 drivers
+L_0x148078328 .functor BUFT 1, C4<11111111>, C4<0>, C4<0>, C4<0>;
+v0x140e4c3c0_0 .net/2u *"_ivl_68", 7 0, L_0x148078328;  1 drivers
+v0x140e4c470_0 .net *"_ivl_71", 7 0, L_0x140e4ffb0;  1 drivers
+v0x140e4c520_0 .net "clk", 0 0, v0x140e4dad0_0;  1 drivers
+v0x140e4c5c0_0 .net "gain_noise", 7 0, v0x140e4db90_0;  1 drivers
+v0x140e4c670_0 .net "gain_sawtooth", 7 0, v0x140e4dc20_0;  1 drivers
+v0x140e4c720_0 .net "gain_sine", 7 0, v0x140e4dcb0_0;  1 drivers
+v0x140e4c7d0_0 .net "gain_square", 7 0, v0x140e4dd40_0;  1 drivers
+v0x140e4c880_0 .net "gain_triangle", 7 0, v0x140e4de10_0;  1 drivers
+v0x140e4c930_0 .net "gain_wavetable", 7 0, v0x140e4dec0_0;  1 drivers
+v0x140e4c9e0_0 .net "mixed_out", 7 0, L_0x140e503f0;  alias, 1 drivers
+v0x140e4ca90_0 .var "mixed_out_reg", 7 0;
+v0x140e4bf90_0 .net "mixed_saturated", 7 0, L_0x140e50280;  1 drivers
+v0x140e4cd20_0 .net "noise_in", 7 0, v0x140e4e020_0;  1 drivers
+v0x140e4cdb0_0 .net "overflow", 0 0, L_0x140e500a0;  1 drivers
+v0x140e4ce40_0 .net "rst_n", 0 0, v0x140e4e150_0;  1 drivers
+v0x140e4cee0_0 .net "sawtooth_in", 7 0, v0x140e4e1e0_0;  1 drivers
+v0x140e4cf90_0 .net "scaled_noise", 7 0, L_0x140e4ea10;  1 drivers
+v0x140e4d040_0 .net "scaled_sawtooth", 7 0, L_0x140e4e690;  1 drivers
+v0x140e4d0f0_0 .net "scaled_sine", 7 0, L_0x140e4e8d0;  1 drivers
+v0x140e4d1a0_0 .net "scaled_square", 7 0, L_0x140e4e530;  1 drivers
+v0x140e4d250_0 .net "scaled_triangle", 7 0, L_0x140e4e7b0;  1 drivers
+v0x140e4d300_0 .net "scaled_wavetable", 7 0, L_0x140e4eb60;  1 drivers
+v0x140e4d3b0_0 .net "sine_in", 7 0, v0x140e4e270_0;  1 drivers
+v0x140e4d460_0 .net "square_in", 7 0, v0x140e4e320_0;  1 drivers
+v0x140e4d510_0 .net "sum_01", 8 0, L_0x140e4ef00;  1 drivers
+v0x140e4d5c0_0 .net "sum_0123", 9 0, L_0x140e4fb10;  1 drivers
+v0x140e4d670_0 .net "sum_23", 8 0, L_0x140e4f310;  1 drivers
+v0x140e4d720_0 .net "sum_45", 8 0, L_0x140e4f6c0;  1 drivers
+v0x140e4d7d0_0 .net "sum_final", 10 0, L_0x140e4fe70;  1 drivers
+v0x140e4d880_0 .net "triangle_in", 7 0, v0x140e4e3d0_0;  1 drivers
+v0x140e4d930_0 .net "wavetable_in", 7 0, v0x140e4e480_0;  1 drivers
+E_0x140e0f920/0 .event negedge, v0x140e4ce40_0;
+E_0x140e0f920/1 .event posedge, v0x140e4c520_0;
+E_0x140e0f920 .event/or E_0x140e0f920/0, E_0x140e0f920/1;
+L_0x140e4e530 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e320_0, v0x140e4dd40_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4e690 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e1e0_0, v0x140e4dc20_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4e7b0 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e3d0_0, v0x140e4de10_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4e8d0 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e270_0, v0x140e4dcb0_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4ea10 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e020_0, v0x140e4db90_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4eb60 .ufunc/vec4 TD_test_waveform_mixer.dut.apply_gain, 8, v0x140e4e480_0, v0x140e4dec0_0 (v0x140e4b270_0, v0x140e4b1d0_0) S_0x140e339f0;
+L_0x140e4ec80 .concat [ 8 1 0 0], L_0x140e4e530, L_0x148078010;
+L_0x140e4ede0 .concat [ 8 1 0 0], L_0x140e4e690, L_0x148078058;
+L_0x140e4ef00 .arith/sum 9, L_0x140e4ec80, L_0x140e4ede0;
+L_0x140e4f090 .concat [ 8 1 0 0], L_0x140e4e7b0, L_0x1480780a0;
+L_0x140e4f170 .concat [ 8 1 0 0], L_0x140e4e8d0, L_0x1480780e8;
+L_0x140e4f310 .arith/sum 9, L_0x140e4f090, L_0x140e4f170;
+L_0x140e4f450 .concat [ 8 1 0 0], L_0x140e4ea10, L_0x148078130;
+L_0x140e4f5e0 .concat [ 8 1 0 0], L_0x140e4eb60, L_0x148078178;
+L_0x140e4f6c0 .arith/sum 9, L_0x140e4f450, L_0x140e4f5e0;
+L_0x140e4f880 .concat [ 9 1 0 0], L_0x140e4ef00, L_0x1480781c0;
+L_0x140e4f960 .concat [ 9 1 0 0], L_0x140e4f310, L_0x148078208;
+L_0x140e4fb10 .arith/sum 10, L_0x140e4f880, L_0x140e4f960;
+L_0x140e4fc90 .concat [ 10 1 0 0], L_0x140e4fb10, L_0x148078250;
+L_0x140e4fdd0 .concat [ 9 2 0 0], L_0x140e4f6c0, L_0x148078298;
+L_0x140e4fe70 .arith/sum 11, L_0x140e4fc90, L_0x140e4fdd0;
+L_0x140e4fd30 .part L_0x140e4fe70, 8, 3;
+L_0x140e500a0 .cmp/ne 3, L_0x140e4fd30, L_0x1480782e0;
+L_0x140e4ffb0 .part L_0x140e4fe70, 0, 8;
+L_0x140e50280 .functor MUXZ 8, L_0x140e4ffb0, L_0x148078328, L_0x140e500a0, C4<>;
+S_0x140e339f0 .scope function.vec4.s8, "apply_gain" "apply_gain" 4 58, 4 58 0, S_0x140e2ba90;
+ .timescale 0 0;
+; Variable apply_gain is vec4 return value of scope S_0x140e339f0
+v0x140e4b1d0_0 .var "gain", 7 0;
+v0x140e4b270_0 .var "waveform", 7 0;
+TD_test_waveform_mixer.dut.apply_gain ;
+    %load/vec4 v0x140e4b1d0_0;
+    %cmpi/e 0, 0, 8;
+    %jmp/0xz  T_0.0, 4;
     %pushi/vec4 0, 0, 8;
-    %assign/vec4 v0x11f64de80_0, 0;
+    %ret/vec4 0, 0, 8;  Assign to apply_gain (store_vec4_to_lval)
     %jmp T_0.1;
 T_0.0 ;
-    %load/vec4 v0x11f64df30_0;
-    %assign/vec4 v0x11f64de80_0, 0;
-T_0.1 ;
-    %jmp T_0;
-    .thread T_0;
-    .scope S_0x11f62da20;
-T_1 ;
+    %load/vec4 v0x140e4b1d0_0;
+    %parti/s 2, 6, 4;
+    %dup/vec4;
+    %pushi/vec4 0, 0, 2;
+    %cmp/u;
+    %jmp/1 T_0.2, 6;
+    %dup/vec4;
+    %pushi/vec4 1, 0, 2;
+    %cmp/u;
+    %jmp/1 T_0.3, 6;
+    %dup/vec4;
+    %pushi/vec4 2, 0, 2;
+    %cmp/u;
+    %jmp/1 T_0.4, 6;
+    %dup/vec4;
+    %pushi/vec4 3, 0, 2;
+    %cmp/u;
+    %jmp/1 T_0.5, 6;
+    %jmp T_0.6;
+T_0.2 ;
+    %load/vec4 v0x140e4b270_0;
+    %ix/load 4, 2, 0;
+    %flag_set/imm 4, 0;
+    %shiftr 4;
+    %ret/vec4 0, 0, 8;  Assign to apply_gain (store_vec4_to_lval)
+    %jmp T_0.6;
+T_0.3 ;
+    %load/vec4 v0x140e4b270_0;
+    %ix/load 4, 1, 0;
+    %flag_set/imm 4, 0;
+    %shiftr 4;
+    %ret/vec4 0, 0, 8;  Assign to apply_gain (store_vec4_to_lval)
+    %jmp T_0.6;
+T_0.4 ;
     %pushi/vec4 0, 0, 1;
-    %store/vec4 v0x11f64ec70_0, 0, 1;
-T_1.0 ;
-    %delay 10000, 0;
-    %load/vec4 v0x11f64ec70_0;
-    %inv;
-    %store/vec4 v0x11f64ec70_0, 0, 1;
-    %jmp T_1.0;
+    %load/vec4 v0x140e4b270_0;
+    %parti/s 7, 1, 2;
+    %concat/vec4; draw_concat_vec4
+    %pushi/vec4 0, 0, 2;
+    %load/vec4 v0x140e4b270_0;
+    %parti/s 6, 2, 3;
+    %concat/vec4; draw_concat_vec4
+    %add;
+    %ret/vec4 0, 0, 8;  Assign to apply_gain (store_vec4_to_lval)
+    %jmp T_0.6;
+T_0.5 ;
+    %load/vec4 v0x140e4b270_0;
+    %ret/vec4 0, 0, 8;  Assign to apply_gain (store_vec4_to_lval)
+    %jmp T_0.6;
+T_0.6 ;
+    %pop/vec4 1;
+T_0.1 ;
     %end;
+    .scope S_0x140e2ba90;
+T_1 ;
+    %wait E_0x140e0f920;
+    %load/vec4 v0x140e4ce40_0;
+    %nor/r;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_1.0, 8;
+    %pushi/vec4 0, 0, 8;
+    %assign/vec4 v0x140e4ca90_0, 0;
+    %jmp T_1.1;
+T_1.0 ;
+    %load/vec4 v0x140e4bf90_0;
+    %assign/vec4 v0x140e4ca90_0, 0;
+T_1.1 ;
+    %jmp T_1;
     .thread T_1;
-    .scope S_0x11f62da20;
+    .scope S_0x140e2bef0;
 T_2 ;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x140e4dad0_0, 0, 1;
+T_2.0 ;
+    %delay 10000, 0;
+    %load/vec4 v0x140e4dad0_0;
+    %inv;
+    %store/vec4 v0x140e4dad0_0, 0, 1;
+    %jmp T_2.0;
+    %end;
+    .thread T_2;
+    .scope S_0x140e2bef0;
+T_3 ;
     %vpi_call/w 3 66 "$dumpfile", "waveform_mixer.vcd" {0 0 0};
-    %vpi_call/w 3 67 "$dumpvars", 32'sb00000000000000000000000000000000, S_0x11f62da20 {0 0 0};
+    %vpi_call/w 3 67 "$dumpvars", 32'sb00000000000000000000000000000000, S_0x140e2bef0 {0 0 0};
     %vpi_call/w 3 69 "$display", "=== 6-Channel Waveform Mixer Test ===\012" {0 0 0};
     %pushi/vec4 0, 0, 1;
-    %store/vec4 v0x11f64f2f0_0, 0, 1;
+    %store/vec4 v0x140e4e150_0, 0, 1;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f380_0, 0, 8;
+    %store/vec4 v0x140e4e1e0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f570_0, 0, 8;
+    %store/vec4 v0x140e4e3d0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f1c0_0, 0, 8;
+    %store/vec4 v0x140e4e020_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f620_0, 0, 8;
+    %store/vec4 v0x140e4e480_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 100000, 0;
     %pushi/vec4 1, 0, 1;
-    %store/vec4 v0x11f64f2f0_0, 0, 1;
+    %store/vec4 v0x140e4e150_0, 0, 1;
     %delay 50000, 0;
     %vpi_call/w 3 92 "$display", "--- Test 1: Single Waveform (Square) at Full Gain ---" {0 0 0};
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
-    %cmpi/u 254, 0, 8;
-    %flag_inv 5; GE is !LT
-    %flag_get/vec4 5;
-    %jmp/0 T_2.2, 5;
-    %load/vec4 v0x11f64f110_0;
-    %cmpi/u 255, 0, 8;
-    %flag_get/vec4 4;
-    %flag_get/vec4 5;
-    %or;
-    %and;
-T_2.2;
-    %flag_set/vec4 8;
-    %jmp/0xz  T_2.0, 8;
-    %vpi_call/w 3 98 "$display", "\342\234\223 PASS: Square at full gain = 0x%02X", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.1;
-T_2.0 ;
-    %vpi_call/w 3 100 "$display", "\342\234\227 FAIL: Square at full gain = 0x%02X (expected 0xFE-0xFF)", v0x11f64f110_0 {0 0 0};
-T_2.1 ;
+    %load/vec4 v0x140e4df70_0;
+    %cmpi/e 255, 0, 8;
+    %jmp/0xz  T_3.0, 4;
+    %vpi_call/w 3 98 "$display", "\342\234\223 PASS: Square at full gain = 0x%02X", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.1;
+T_3.0 ;
+    %vpi_call/w 3 100 "$display", "\342\234\227 FAIL: Square at full gain = 0x%02X (expected 0xFF)", v0x140e4df70_0 {0 0 0};
+T_3.1 ;
     %vpi_call/w 3 104 "$display", "\012--- Test 2: Square at Half Gain ---" {0 0 0};
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 128, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 127, 0, 8;
     %flag_inv 5; GE is !LT
     %flag_get/vec4 5;
-    %jmp/0 T_2.5, 5;
-    %load/vec4 v0x11f64f110_0;
+    %jmp/0 T_3.4, 5;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 129, 0, 8;
     %flag_get/vec4 4;
     %flag_get/vec4 5;
     %or;
     %and;
-T_2.5;
+T_3.4;
     %flag_set/vec4 8;
-    %jmp/0xz  T_2.3, 8;
-    %vpi_call/w 3 114 "$display", "\342\234\223 PASS: Square at half gain = 0x%02X (expected ~0x80)", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.4;
-T_2.3 ;
-    %vpi_call/w 3 116 "$display", "\342\234\227 FAIL: Square at half gain = 0x%02X (expected ~0x80)", v0x11f64f110_0 {0 0 0};
-T_2.4 ;
+    %jmp/0xz  T_3.2, 8;
+    %vpi_call/w 3 114 "$display", "\342\234\223 PASS: Square at half gain = 0x%02X (expected ~0x80)", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.3;
+T_3.2 ;
+    %vpi_call/w 3 116 "$display", "\342\234\227 FAIL: Square at half gain = 0x%02X (expected ~0x80)", v0x140e4df70_0 {0 0 0};
+T_3.3 ;
     %vpi_call/w 3 120 "$display", "\012--- Test 3: Zero Gain (All Waveforms) ---" {0 0 0};
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f380_0, 0, 8;
+    %store/vec4 v0x140e4e1e0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f570_0, 0, 8;
+    %store/vec4 v0x140e4e3d0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f1c0_0, 0, 8;
+    %store/vec4 v0x140e4e020_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f620_0, 0, 8;
+    %store/vec4 v0x140e4e480_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/e 0, 0, 8;
-    %jmp/0xz  T_2.6, 4;
-    %vpi_call/w 3 135 "$display", "\342\234\223 PASS: All gains zero = 0x%02X", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.7;
-T_2.6 ;
-    %vpi_call/w 3 137 "$display", "\342\234\227 FAIL: All gains zero = 0x%02X (expected 0x00)", v0x11f64f110_0 {0 0 0};
-T_2.7 ;
+    %jmp/0xz  T_3.5, 4;
+    %vpi_call/w 3 135 "$display", "\342\234\223 PASS: All gains zero = 0x%02X", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.6;
+T_3.5 ;
+    %vpi_call/w 3 137 "$display", "\342\234\227 FAIL: All gains zero = 0x%02X (expected 0x00)", v0x140e4df70_0 {0 0 0};
+T_3.6 ;
     %vpi_call/w 3 141 "$display", "\012--- Test 4: Mix Two Waveforms (Square + Sine) ---" {0 0 0};
     %pushi/vec4 128, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 128, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 128, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 128, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 126, 0, 8;
     %flag_inv 5; GE is !LT
     %flag_get/vec4 5;
-    %jmp/0 T_2.10, 5;
-    %load/vec4 v0x11f64f110_0;
+    %jmp/0 T_3.9, 5;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 130, 0, 8;
     %flag_get/vec4 4;
     %flag_get/vec4 5;
     %or;
     %and;
-T_2.10;
+T_3.9;
     %flag_set/vec4 8;
-    %jmp/0xz  T_2.8, 8;
-    %vpi_call/w 3 153 "$display", "\342\234\223 PASS: Two waveforms mixed = 0x%02X (expected ~0x80)", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.9;
-T_2.8 ;
-    %vpi_call/w 3 155 "$display", "\342\234\227 FAIL: Two waveforms mixed = 0x%02X (expected ~0x80)", v0x11f64f110_0 {0 0 0};
-T_2.9 ;
+    %jmp/0xz  T_3.7, 8;
+    %vpi_call/w 3 153 "$display", "\342\234\223 PASS: Two waveforms mixed = 0x%02X (expected ~0x80)", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.8;
+T_3.7 ;
+    %vpi_call/w 3 155 "$display", "\342\234\227 FAIL: Two waveforms mixed = 0x%02X (expected ~0x80)", v0x140e4df70_0 {0 0 0};
+T_3.8 ;
     %vpi_call/w 3 159 "$display", "\012--- Test 5: Saturation (All Waveforms at Full) ---" {0 0 0};
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f380_0, 0, 8;
+    %store/vec4 v0x140e4e1e0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f570_0, 0, 8;
+    %store/vec4 v0x140e4e3d0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f1c0_0, 0, 8;
+    %store/vec4 v0x140e4e020_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f620_0, 0, 8;
+    %store/vec4 v0x140e4e480_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/e 255, 0, 8;
-    %jmp/0xz  T_2.11, 4;
-    %vpi_call/w 3 175 "$display", "\342\234\223 PASS: Saturation works = 0x%02X", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.12;
-T_2.11 ;
-    %vpi_call/w 3 177 "$display", "\342\234\227 FAIL: Saturation = 0x%02X (expected 0xFF)", v0x11f64f110_0 {0 0 0};
-T_2.12 ;
+    %jmp/0xz  T_3.10, 4;
+    %vpi_call/w 3 175 "$display", "\342\234\223 PASS: Saturation works = 0x%02X", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.11;
+T_3.10 ;
+    %vpi_call/w 3 177 "$display", "\342\234\227 FAIL: Saturation = 0x%02X (expected 0xFF)", v0x140e4df70_0 {0 0 0};
+T_3.11 ;
     %vpi_call/w 3 181 "$display", "\012--- Test 6: Equal Mix of All 6 Waveforms ---" {0 0 0};
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f380_0, 0, 8;
+    %store/vec4 v0x140e4e1e0_0, 0, 8;
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f570_0, 0, 8;
+    %store/vec4 v0x140e4e3d0_0, 0, 8;
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f1c0_0, 0, 8;
+    %store/vec4 v0x140e4e020_0, 0, 8;
     %pushi/vec4 192, 0, 8;
-    %store/vec4 v0x11f64f620_0, 0, 8;
+    %store/vec4 v0x140e4e480_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 42, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 176, 0, 8;
     %flag_inv 5; GE is !LT
     %flag_get/vec4 5;
-    %jmp/0 T_2.15, 5;
-    %load/vec4 v0x11f64f110_0;
+    %jmp/0 T_3.14, 5;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 208, 0, 8;
     %flag_get/vec4 4;
     %flag_get/vec4 5;
     %or;
     %and;
-T_2.15;
+T_3.14;
     %flag_set/vec4 8;
-    %jmp/0xz  T_2.13, 8;
-    %vpi_call/w 3 197 "$display", "\342\234\223 PASS: 6-way equal mix = 0x%02X (expected ~0xC0)", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.14;
-T_2.13 ;
-    %vpi_call/w 3 199 "$display", "\342\234\227 FAIL: 6-way equal mix = 0x%02X (expected ~0xC0)", v0x11f64f110_0 {0 0 0};
-T_2.14 ;
+    %jmp/0xz  T_3.12, 8;
+    %vpi_call/w 3 197 "$display", "\342\234\223 PASS: 6-way equal mix = 0x%02X (expected ~0xC0)", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.13;
+T_3.12 ;
+    %vpi_call/w 3 199 "$display", "\342\234\227 FAIL: 6-way equal mix = 0x%02X (expected ~0xC0)", v0x140e4df70_0 {0 0 0};
+T_3.13 ;
     %vpi_call/w 3 203 "$display", "\012--- Test 7: Sine at Quarter Gain ---" {0 0 0};
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 64, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 0, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 62, 0, 8;
     %flag_inv 5; GE is !LT
     %flag_get/vec4 5;
-    %jmp/0 T_2.18, 5;
-    %load/vec4 v0x11f64f110_0;
+    %jmp/0 T_3.17, 5;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/u 66, 0, 8;
     %flag_get/vec4 4;
     %flag_get/vec4 5;
     %or;
     %and;
-T_2.18;
+T_3.17;
     %flag_set/vec4 8;
-    %jmp/0xz  T_2.16, 8;
-    %vpi_call/w 3 214 "$display", "\342\234\223 PASS: Quarter gain = 0x%02X (expected ~0x40)", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.17;
-T_2.16 ;
-    %vpi_call/w 3 216 "$display", "\342\234\227 FAIL: Quarter gain = 0x%02X (expected ~0x40)", v0x11f64f110_0 {0 0 0};
-T_2.17 ;
+    %jmp/0xz  T_3.15, 8;
+    %vpi_call/w 3 214 "$display", "\342\234\223 PASS: Quarter gain = 0x%02X (expected ~0x40)", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.16;
+T_3.15 ;
+    %vpi_call/w 3 216 "$display", "\342\234\227 FAIL: Quarter gain = 0x%02X (expected ~0x40)", v0x140e4df70_0 {0 0 0};
+T_3.16 ;
     %vpi_call/w 3 220 "$display", "\012--- Test 8: Different Waveform Values ---" {0 0 0};
     %pushi/vec4 16, 0, 8;
-    %store/vec4 v0x11f64f4c0_0, 0, 8;
+    %store/vec4 v0x140e4e320_0, 0, 8;
     %pushi/vec4 32, 0, 8;
-    %store/vec4 v0x11f64f380_0, 0, 8;
+    %store/vec4 v0x140e4e1e0_0, 0, 8;
     %pushi/vec4 48, 0, 8;
-    %store/vec4 v0x11f64f570_0, 0, 8;
+    %store/vec4 v0x140e4e3d0_0, 0, 8;
     %pushi/vec4 64, 0, 8;
-    %store/vec4 v0x11f64f410_0, 0, 8;
+    %store/vec4 v0x140e4e270_0, 0, 8;
     %pushi/vec4 80, 0, 8;
-    %store/vec4 v0x11f64f1c0_0, 0, 8;
+    %store/vec4 v0x140e4e020_0, 0, 8;
     %pushi/vec4 96, 0, 8;
-    %store/vec4 v0x11f64f620_0, 0, 8;
+    %store/vec4 v0x140e4e480_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64eee0_0, 0, 8;
+    %store/vec4 v0x140e4dd40_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64edc0_0, 0, 8;
+    %store/vec4 v0x140e4dc20_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64efb0_0, 0, 8;
+    %store/vec4 v0x140e4de10_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64ee50_0, 0, 8;
+    %store/vec4 v0x140e4dcb0_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64ed30_0, 0, 8;
+    %store/vec4 v0x140e4db90_0, 0, 8;
     %pushi/vec4 255, 0, 8;
-    %store/vec4 v0x11f64f060_0, 0, 8;
+    %store/vec4 v0x140e4dec0_0, 0, 8;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/e 255, 0, 8;
-    %jmp/0xz  T_2.19, 4;
-    %vpi_call/w 3 240 "$display", "\342\234\223 PASS: Sum of varied inputs = 0x%02X", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.20;
-T_2.19 ;
-    %vpi_call/w 3 242 "$display", "\342\234\227 FAIL: Sum of varied inputs = 0x%02X", v0x11f64f110_0 {0 0 0};
-T_2.20 ;
+    %jmp/0xz  T_3.18, 4;
+    %vpi_call/w 3 240 "$display", "\342\234\223 PASS: Sum of varied inputs = 0x%02X", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.19;
+T_3.18 ;
+    %vpi_call/w 3 242 "$display", "\342\234\227 FAIL: Sum of varied inputs = 0x%02X", v0x140e4df70_0 {0 0 0};
+T_3.19 ;
     %vpi_call/w 3 246 "$display", "\012--- Test 9: Reset Behavior ---" {0 0 0};
     %pushi/vec4 0, 0, 1;
-    %store/vec4 v0x11f64f2f0_0, 0, 1;
+    %store/vec4 v0x140e4e150_0, 0, 1;
     %delay 40000, 0;
-    %load/vec4 v0x11f64f110_0;
+    %load/vec4 v0x140e4df70_0;
     %cmpi/e 0, 0, 8;
-    %jmp/0xz  T_2.21, 4;
-    %vpi_call/w 3 250 "$display", "\342\234\223 PASS: Reset clears output = 0x%02X", v0x11f64f110_0 {0 0 0};
-    %jmp T_2.22;
-T_2.21 ;
-    %vpi_call/w 3 252 "$display", "\342\234\227 FAIL: Reset output = 0x%02X (expected 0x00)", v0x11f64f110_0 {0 0 0};
-T_2.22 ;
+    %jmp/0xz  T_3.20, 4;
+    %vpi_call/w 3 250 "$display", "\342\234\223 PASS: Reset clears output = 0x%02X", v0x140e4df70_0 {0 0 0};
+    %jmp T_3.21;
+T_3.20 ;
+    %vpi_call/w 3 252 "$display", "\342\234\227 FAIL: Reset output = 0x%02X (expected 0x00)", v0x140e4df70_0 {0 0 0};
+T_3.21 ;
     %vpi_call/w 3 255 "$display", "\012=== All Waveform Mixer tests completed ===" {0 0 0};
     %delay 100000, 0;
     %vpi_call/w 3 257 "$finish" {0 0 0};
     %end;
-    .thread T_2;
-    .scope S_0x11f62da20;
-T_3 ;
+    .thread T_3;
+    .scope S_0x140e2bef0;
+T_4 ;
     %delay 100000000, 0;
     %vpi_call/w 3 263 "$display", "ERROR: Testbench timeout!" {0 0 0};
     %vpi_call/w 3 264 "$finish" {0 0 0};
     %end;
-    .thread T_3;
+    .thread T_4;
 # The file index is used to find the file name in the following table.
 :file_names 5;
     "N/A";
     "<interactive>";
     "-";
-    "test/test_waveform_mixer.v";
-    "src/waveform_mixer.v";
+    "test_waveform_mixer.v";
+    "../src/waveform_mixer.v";

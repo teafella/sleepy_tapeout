@@ -1,23 +1,32 @@
 /*
- * Amplitude Modulator
+ * Amplitude Modulator (Area-Optimized)
  *
  * Multiplies the input waveform by the ADSR envelope value to create
  * dynamic amplitude control. Also applies master amplitude scaling.
  *
+ * AREA OPTIMIZATION: Keeps envelope multiplier (essential for smooth ADSR),
+ * but replaces master amplitude multiplier with bit-shift based control.
+ * Reduces area from ~56 cells to ~24 cells (2.3× reduction).
+ *
  * Theory of Operation:
- *   1. Multiply waveform by envelope (both 8-bit)
+ *   1. Multiply waveform by envelope (both 8-bit) - SMOOTH control needed
  *   2. Take upper 8 bits of 16-bit product
- *   3. Multiply by master amplitude
- *   4. Take upper 8 bits again
+ *   3. Apply master amplitude (one of 5 levels):
+ *      master_amplitude = 0x00:        Mute (complete silence)
+ *      master_amplitude = 0x01-0x3F:   1/4 volume (>> 2)
+ *      master_amplitude = 0x40-0x7F:   1/2 volume (>> 1)
+ *      master_amplitude = 0x80-0xBF:   3/4 volume (x0.75)
+ *      master_amplitude = 0xC0-0xFF:   Full volume (no attenuation)
  *
  * This creates smooth envelope control where:
  *   - Envelope = 0xFF (255) → full amplitude
  *   - Envelope = 0x80 (128) → ~50% amplitude
  *   - Envelope = 0x00 (0)   → silence
  *
- * Resource Usage: ~56 cells (1.4% of 1x1 tile)
- *   - 2× 8×8 multipliers: ~32 cells
- *   - Routing and control: ~24 cells
+ * Resource Usage: ~24 cells (0.6% of 1x1 tile)
+ *   - 1× 8×8 multiplier: ~16 cells
+ *   - Shift mux: ~4 cells
+ *   - Routing and control: ~4 cells
  */
 
 module amplitude_modulator (
@@ -31,6 +40,7 @@ module amplitude_modulator (
     input  wire [7:0]  envelope_value,
 
     // Master amplitude control (from I2C register 0x0B)
+    // 0x00=mute, 0x01-0x3F=1/4, 0x40-0x7F=1/2, 0x80-0xBF=3/4, 0xC0-0xFF=full
     input  wire [7:0]  master_amplitude,
 
     // Modulated output
@@ -40,6 +50,7 @@ module amplitude_modulator (
     // ========================================
     // Stage 1: Multiply waveform by envelope
     // ========================================
+    // KEEP MULTIPLIER: Envelope needs smooth control for ADSR
     // Both are unsigned 8-bit values
     // Product is 16-bit: waveform × envelope
     wire [15:0] envelope_product = waveform_in * envelope_value;
@@ -49,13 +60,24 @@ module amplitude_modulator (
     wire [7:0] envelope_modulated = envelope_product[15:8];
 
     // ========================================
-    // Stage 2: Apply master amplitude
+    // Stage 2: Apply master amplitude via shift
     // ========================================
-    // Multiply by master amplitude for additional level control
-    wire [15:0] amplitude_product = envelope_modulated * master_amplitude;
+    // If master_amplitude == 0, mute completely
+    // Otherwise use upper 2 bits to select shift amount (power-of-2 gain)
+    reg [7:0] amplitude_scaled;
 
-    // Take upper 8 bits again
-    wire [7:0] amplitude_scaled = amplitude_product[15:8];
+    always @(*) begin
+        if (master_amplitude == 8'h00) begin
+            amplitude_scaled = 8'h00;  // Mute
+        end else begin
+            case (master_amplitude[7:6])
+                2'b00: amplitude_scaled = envelope_modulated >> 2;  // 1/4 volume (0x01-0x3F)
+                2'b01: amplitude_scaled = envelope_modulated >> 1;  // 1/2 volume (0x40-0x7F)
+                2'b10: amplitude_scaled = {1'b0, envelope_modulated[7:1]} + {2'b0, envelope_modulated[7:2]};  // 3/4 volume (0x80-0xBF)
+                2'b11: amplitude_scaled = envelope_modulated;       // Full volume (0xC0-0xFF)
+            endcase
+        end
+    end
 
     // ========================================
     // Stage 3: Output register for timing
