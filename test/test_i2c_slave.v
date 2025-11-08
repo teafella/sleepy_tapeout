@@ -34,12 +34,13 @@ module test_i2c_slave;
     reg        status_gate_active;
     reg        status_osc_running;
 
-    // Register outputs (6 registers only)
+    // Register outputs (7 registers only)
     wire [7:0] reg_control;
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
+    wire [7:0] reg_volume;
     wire [7:0] reg_status;
 
     // Instantiate DUT
@@ -57,6 +58,7 @@ module test_i2c_slave;
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
         .reg_duty(reg_duty),
+        .reg_volume(reg_volume),
         .reg_status(reg_status),
         .status_gate_active(status_gate_active),
         .status_osc_running(status_osc_running)
@@ -82,7 +84,7 @@ module test_i2c_slave;
         $dumpfile("i2c_slave.vcd");
         $dumpvars(0, test_i2c_slave);
 
-        $display("=== I2C Slave Interface Test (Minimal 6-Register Version) ===\n");
+        $display("=== I2C Slave Interface Test (Minimal 7-Register Version) ===\n");
 
         // Initialize
         rst_n = 0;
@@ -222,7 +224,23 @@ module test_i2c_slave;
             $display("✗ FAIL: Status register was written (0x%02X)", read_data);
         end
 
-        $display("\n--- Test 11: Invalid Register Address ---");
+        $display("\n--- Test 11: Write and Read Volume Register ---");
+        i2c_write_register(8'h06, 8'h80);  // Set volume to 50%
+        #500;
+        if (reg_volume == 8'h80) begin
+            $display("✓ PASS: Volume register = 0x%02X", reg_volume);
+        end else begin
+            $display("✗ FAIL: Volume register = 0x%02X (expected 0x80)", reg_volume);
+        end
+        i2c_read_register(8'h06, read_data);
+        #500;
+        if (read_data == 8'h80) begin
+            $display("✓ PASS: Read volume = 0x%02X", read_data);
+        end else begin
+            $display("✗ FAIL: Read volume = 0x%02X (expected 0x80)", read_data);
+        end
+
+        $display("\n--- Test 12: Invalid Register Address ---");
         i2c_write_register(8'h07, 8'h42);  // Invalid address (removed ADSR registers)
         #500;
         i2c_read_register(8'h07, read_data);

@@ -13,13 +13,14 @@
  * Waveform enables are now in control register bits
  * Saves ~100 cells from register storage and muxing logic
  *
- * Register Map (6 registers):
+ * Register Map (7 registers):
  * 0x00: Control (bit 0=OSC_EN, bit 1=SW_GATE, bits 2-4=waveform enables)
  * 0x02-0x04: Frequency (24-bit, little-endian)
  * 0x05: Duty cycle (square wave PWM)
+ * 0x06: Volume (0x00=mute, 0xFF=full volume)
  * 0x12: Status (read-only: gate, osc running)
  *
- * Resource Usage: ~200 cells (5% of 1x1 tile, was ~300 cells)
+ * Resource Usage: ~220 cells (5.5% of 1x1 tile, was ~300 cells)
  */
 
 module i2c_slave #(
@@ -34,13 +35,14 @@ module i2c_slave #(
     output wire        sda_out,    // I2C data output
     output wire        sda_oe,     // I2C data output enable (1=drive, 0=hi-z)
 
-    // Essential register outputs (6 registers total)
+    // Essential register outputs (7 registers total)
     // Control register bits: [0]=OSC_EN, [1]=SW_GATE, [2]=enable_square, [3]=enable_sawtooth, [4]=enable_triangle
     output reg [7:0]   reg_control,       // 0x00: Control with waveform enables
     output reg [7:0]   reg_freq_low,      // 0x02: Frequency low byte
     output reg [7:0]   reg_freq_mid,      // 0x03: Frequency mid byte
     output reg [7:0]   reg_freq_high,     // 0x04: Frequency high byte
     output reg [7:0]   reg_duty,          // 0x05: Square wave duty cycle
+    output reg [7:0]   reg_volume,        // 0x06: Master volume (0x00=mute, 0xFF=full)
     output wire [7:0]  reg_status,        // 0x12: Read-only status
 
     // Status inputs (for read-only status register)
@@ -281,7 +283,7 @@ module i2c_slave #(
     end
 
     // ========================================
-    // Register Write Task (6 essential registers)
+    // Register Write Task (7 essential registers)
     // ========================================
     task write_register;
         input [7:0] addr;
@@ -293,6 +295,7 @@ module i2c_slave #(
                 8'h03: reg_freq_mid <= data;
                 8'h04: reg_freq_high <= data;
                 8'h05: reg_duty <= data;
+                8'h06: reg_volume <= data;
                 // 0x12 is read-only status register
                 default: begin
                     // Invalid/removed address, ignore
@@ -302,7 +305,7 @@ module i2c_slave #(
     endtask
 
     // ========================================
-    // Register Read Function (6 essential registers)
+    // Register Read Function (7 essential registers)
     // ========================================
     function [7:0] read_register;
         input [7:0] addr;
@@ -313,6 +316,7 @@ module i2c_slave #(
                 8'h03: read_register = reg_freq_mid;
                 8'h04: read_register = reg_freq_high;
                 8'h05: read_register = reg_duty;
+                8'h06: read_register = reg_volume;
                 8'h12: read_register = reg_status;  // Read-only status
                 default: read_register = 8'hFF;  // Invalid/removed address
             endcase
@@ -320,7 +324,7 @@ module i2c_slave #(
     endfunction
 
     // ========================================
-    // Register Initialization (6 essential registers)
+    // Register Initialization (7 essential registers)
     // ========================================
     initial begin
         // Initialize essential registers to default values
@@ -330,6 +334,7 @@ module i2c_slave #(
         reg_freq_mid = 8'h00;
         reg_freq_high = 8'h00;
         reg_duty = 8'h80;              // 50% duty cycle
+        reg_volume = 8'hFF;            // Full volume by default
     end
 
 endmodule

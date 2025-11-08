@@ -38,13 +38,14 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // I2C Slave Interface - Minimal Register Bank (6 registers)
+    // I2C Slave Interface - Minimal Register Bank (7 registers)
     // ========================================
     wire [7:0] reg_control;       // bits [0]=OSC_EN, [1]=SW_GATE, [2-4]=waveform enables
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
+    wire [7:0] reg_volume;        // Master volume control
     wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
@@ -72,12 +73,13 @@ module tt_um_sleepy_module (
         .sda_in(uio_in[0]),
         .sda_out(sda_out_i2c),
         .sda_oe(sda_oe_i2c),
-        // Minimal registers only (6 total)
+        // Minimal registers only (7 total)
         .reg_control(reg_control),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
         .reg_duty(reg_duty),
+        .reg_volume(reg_volume),
         .reg_status(reg_status),
         // Status inputs
         .status_gate_active(gate),
@@ -141,16 +143,22 @@ module tt_um_sleepy_module (
     );
 
     // ========================================
+    // Volume Control
+    // ========================================
+    // Simple 8×8 multiplier for volume control
+    // volume=0xFF → full volume, volume=0x00 → mute
+    wire [15:0] volume_product = mixed_wave * reg_volume;
+    wire [7:0] volume_scaled = volume_product[15:8];
+
+    // ========================================
     // Delta-Sigma DAC (1-bit output)
     // ========================================
-    // ADSR and amplitude modulator removed to save area (~330 cells)
-    // Envelope shaping can be done externally via I2C waveform enable control
     wire dac_out;
 
     delta_sigma_dac dac (
         .clk(clk),
         .rst_n(system_rst_n),
-        .data_in(mixed_wave),  // Direct connection from mixer
+        .data_in(volume_scaled),  // Volume-controlled signal
         .dac_out(dac_out)
     );
 

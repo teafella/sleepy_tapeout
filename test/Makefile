@@ -10,8 +10,6 @@ PROJECT_SOURCES = tt_um_sleepy_module.v \
                   phase_accumulator.v \
                   waveform_generators.v \
                   waveform_mixer.v \
-                  adsr_envelope.v \
-                  amplitude_modulator.v \
                   delta_sigma_dac.v
 
 ifneq ($(GATES),yes)
