@@ -1,34 +1,27 @@
 /*
- * I2C Slave Interface with Register Bank
+ * I2C Slave Interface with Register Bank (Area-Optimized)
  *
- * This module implements a complete I2C slave interface for the synthesizer.
+ * This module implements a stripped-down I2C slave interface for the synthesizer.
  * It supports:
  * - 7-bit addressing
  * - Standard mode (100 kHz) and Fast mode (400 kHz)
- * - 36 registers (0x00 to 0x23)
+ * - 16 essential registers only (was 36)
  * - Read and write operations
  * - Input synchronizers for SCL and SDA
  *
- * Register Map:
- * 0x00: Control (enable, gate, reset, loop)
- * 0x01: Waveform select
+ * AREA OPTIMIZATION: Removed 20 unimplemented/unused registers
+ * Saves ~400-500 cells from register storage and muxing logic
+ *
+ * Register Map (16 registers):
+ * 0x00: Control (OSC_EN, SW_GATE)
  * 0x02-0x04: Frequency (24-bit, little-endian)
- * 0x05: Duty cycle
- * 0x06: Phase offset
+ * 0x05: Duty cycle (square wave PWM)
  * 0x07-0x0A: ADSR (attack, decay, sustain, release)
  * 0x0B: Master amplitude
- * 0x0C-0x0F: SVF1/SVF2 cutoff and resonance
- * 0x10-0x11: Filter mode and enable
- * 0x12: Status (read-only)
- * 0x13-0x15: Wavetable index, data, control
- * 0x16-0x19: Modulation routing and depths
- * 0x1A: Bypass control
- * 0x1B-0x20: Mixer gains (6 channels)
- * 0x21: Glide rate
- * 0x22: PWM depth
- * 0x23: Ring modulator config
+ * 0x12: Status (read-only: gate, ADSR state, osc running)
+ * 0x1B-0x1F: Mixer gains (square, saw, tri, sine, noise)
  *
- * Resource Usage: ~135 cells (3.4% of 1x1 tile)
+ * Resource Usage: ~300 cells (7.5% of 1x1 tile, was ~800 cells)
  */
 
 module i2c_slave #(
@@ -43,43 +36,23 @@ module i2c_slave #(
     output wire        sda_out,    // I2C data output
     output wire        sda_oe,     // I2C data output enable (1=drive, 0=hi-z)
 
-    // Register outputs
-    output reg [7:0]   reg_control,
-    output reg [7:0]   reg_waveform,
-    output reg [7:0]   reg_freq_low,
-    output reg [7:0]   reg_freq_mid,
-    output reg [7:0]   reg_freq_high,
-    output reg [7:0]   reg_duty,
-    output reg [7:0]   reg_phase_offset,
-    output reg [7:0]   reg_attack,
-    output reg [7:0]   reg_decay,
-    output reg [7:0]   reg_sustain,
-    output reg [7:0]   reg_release,
-    output reg [7:0]   reg_amplitude,
-    output reg [7:0]   reg_svf1_cutoff,
-    output reg [7:0]   reg_svf1_resonance,
-    output reg [7:0]   reg_svf2_cutoff,
-    output reg [7:0]   reg_svf2_resonance,
-    output reg [7:0]   reg_filter_mode,
-    output reg [7:0]   reg_filter_enable,
-    output wire [7:0]  reg_status,        // Read-only status
-    output reg [7:0]   reg_wavetable_idx,
-    output reg [7:0]   reg_wavetable_data,
-    output reg [7:0]   reg_wavetable_ctrl,
-    output reg [7:0]   reg_mod_routing,
-    output reg [7:0]   reg_mod_depth_cutoff,
-    output reg [7:0]   reg_mod_depth_resonance,
-    output reg [7:0]   reg_mod_depth_pitch,
-    output reg [7:0]   reg_bypass_ctrl,
-    output reg [7:0]   reg_gain_square,
-    output reg [7:0]   reg_gain_sawtooth,
-    output reg [7:0]   reg_gain_triangle,
-    output reg [7:0]   reg_gain_sine,
-    output reg [7:0]   reg_gain_noise,
-    output reg [7:0]   reg_gain_wavetable,
-    output reg [7:0]   reg_glide_rate,
-    output reg [7:0]   reg_pwm_depth,
-    output reg [7:0]   reg_ring_mod_config,
+    // Essential register outputs (16 registers total)
+    output reg [7:0]   reg_control,       // 0x00: OSC_EN, SW_GATE
+    output reg [7:0]   reg_freq_low,      // 0x02: Frequency low byte
+    output reg [7:0]   reg_freq_mid,      // 0x03: Frequency mid byte
+    output reg [7:0]   reg_freq_high,     // 0x04: Frequency high byte
+    output reg [7:0]   reg_duty,          // 0x05: Square wave duty cycle
+    output reg [7:0]   reg_attack,        // 0x07: ADSR attack rate
+    output reg [7:0]   reg_decay,         // 0x08: ADSR decay rate
+    output reg [7:0]   reg_sustain,       // 0x09: ADSR sustain level
+    output reg [7:0]   reg_release,       // 0x0A: ADSR release rate
+    output reg [7:0]   reg_amplitude,     // 0x0B: Master amplitude
+    output wire [7:0]  reg_status,        // 0x12: Read-only status
+    output reg [7:0]   reg_gain_square,   // 0x1B: Square wave gain
+    output reg [7:0]   reg_gain_sawtooth, // 0x1C: Sawtooth gain
+    output reg [7:0]   reg_gain_triangle, // 0x1D: Triangle gain
+    output reg [7:0]   reg_gain_sine,     // 0x1E: Sine wave gain
+    output reg [7:0]   reg_gain_noise,    // 0x1F: Noise gain
 
     // Status inputs (for read-only status register)
     input  wire        status_gate_active,
@@ -321,7 +294,7 @@ module i2c_slave #(
     end
 
     // ========================================
-    // Register Write Task
+    // Register Write Task (16 essential registers)
     // ========================================
     task write_register;
         input [7:0] addr;
@@ -329,136 +302,76 @@ module i2c_slave #(
         begin
             case (addr)
                 8'h00: reg_control <= data;
-                8'h01: reg_waveform <= data;
                 8'h02: reg_freq_low <= data;
                 8'h03: reg_freq_mid <= data;
                 8'h04: reg_freq_high <= data;
                 8'h05: reg_duty <= data;
-                8'h06: reg_phase_offset <= data;
                 8'h07: reg_attack <= data;
                 8'h08: reg_decay <= data;
                 8'h09: reg_sustain <= data;
                 8'h0A: reg_release <= data;
                 8'h0B: reg_amplitude <= data;
-                8'h0C: reg_svf1_cutoff <= data;
-                8'h0D: reg_svf1_resonance <= data;
-                8'h0E: reg_svf2_cutoff <= data;
-                8'h0F: reg_svf2_resonance <= data;
-                8'h10: reg_filter_mode <= data;
-                8'h11: reg_filter_enable <= data;
                 // 0x12 is read-only status register
-                8'h13: reg_wavetable_idx <= data;
-                8'h14: reg_wavetable_data <= data;
-                8'h15: reg_wavetable_ctrl <= data;
-                8'h16: reg_mod_routing <= data;
-                8'h17: reg_mod_depth_cutoff <= data;
-                8'h18: reg_mod_depth_resonance <= data;
-                8'h19: reg_mod_depth_pitch <= data;
-                8'h1A: reg_bypass_ctrl <= data;
                 8'h1B: reg_gain_square <= data;
                 8'h1C: reg_gain_sawtooth <= data;
                 8'h1D: reg_gain_triangle <= data;
                 8'h1E: reg_gain_sine <= data;
                 8'h1F: reg_gain_noise <= data;
-                8'h20: reg_gain_wavetable <= data;
-                8'h21: reg_glide_rate <= data;
-                8'h22: reg_pwm_depth <= data;
-                8'h23: reg_ring_mod_config <= data;
                 default: begin
-                    // Invalid address, ignore
+                    // Invalid/removed address, ignore
                 end
             endcase
         end
     endtask
 
     // ========================================
-    // Register Read Function
+    // Register Read Function (16 essential registers)
     // ========================================
     function [7:0] read_register;
         input [7:0] addr;
         begin
             case (addr)
                 8'h00: read_register = reg_control;
-                8'h01: read_register = reg_waveform;
                 8'h02: read_register = reg_freq_low;
                 8'h03: read_register = reg_freq_mid;
                 8'h04: read_register = reg_freq_high;
                 8'h05: read_register = reg_duty;
-                8'h06: read_register = reg_phase_offset;
                 8'h07: read_register = reg_attack;
                 8'h08: read_register = reg_decay;
                 8'h09: read_register = reg_sustain;
                 8'h0A: read_register = reg_release;
                 8'h0B: read_register = reg_amplitude;
-                8'h0C: read_register = reg_svf1_cutoff;
-                8'h0D: read_register = reg_svf1_resonance;
-                8'h0E: read_register = reg_svf2_cutoff;
-                8'h0F: read_register = reg_svf2_resonance;
-                8'h10: read_register = reg_filter_mode;
-                8'h11: read_register = reg_filter_enable;
-                8'h12: read_register = reg_status;  // Read-only
-                8'h13: read_register = reg_wavetable_idx;
-                8'h14: read_register = 8'h00;  // Write-only
-                8'h15: read_register = reg_wavetable_ctrl;
-                8'h16: read_register = reg_mod_routing;
-                8'h17: read_register = reg_mod_depth_cutoff;
-                8'h18: read_register = reg_mod_depth_resonance;
-                8'h19: read_register = reg_mod_depth_pitch;
-                8'h1A: read_register = reg_bypass_ctrl;
+                8'h12: read_register = reg_status;  // Read-only status
                 8'h1B: read_register = reg_gain_square;
                 8'h1C: read_register = reg_gain_sawtooth;
                 8'h1D: read_register = reg_gain_triangle;
                 8'h1E: read_register = reg_gain_sine;
                 8'h1F: read_register = reg_gain_noise;
-                8'h20: read_register = reg_gain_wavetable;
-                8'h21: read_register = reg_glide_rate;
-                8'h22: read_register = reg_pwm_depth;
-                8'h23: read_register = reg_ring_mod_config;
-                default: read_register = 8'hFF;
+                default: read_register = 8'hFF;  // Invalid/removed address
             endcase
         end
     endfunction
 
     // ========================================
-    // Register Initialization
+    // Register Initialization (16 essential registers)
     // ========================================
     initial begin
-        // Initialize all registers to default values
-        reg_control = 8'h00;
-        reg_waveform = 8'h00;
+        // Initialize essential registers to default values
+        reg_control = 8'h00;           // Oscillator disabled
         reg_freq_low = 8'h00;
         reg_freq_mid = 8'h00;
         reg_freq_high = 8'h00;
         reg_duty = 8'h80;              // 50% duty cycle
-        reg_phase_offset = 8'h00;
-        reg_attack = 8'h10;
-        reg_decay = 8'h20;
-        reg_sustain = 8'hC0;
-        reg_release = 8'h30;
-        reg_amplitude = 8'hFF;         // Full amplitude
-        reg_svf1_cutoff = 8'hFF;       // Max cutoff
-        reg_svf1_resonance = 8'h00;
-        reg_svf2_cutoff = 8'hFF;
-        reg_svf2_resonance = 8'h00;
-        reg_filter_mode = 8'h00;
-        reg_filter_enable = 8'h01;     // Filter enabled
-        reg_wavetable_idx = 8'h00;
-        reg_wavetable_data = 8'h00;
-        reg_wavetable_ctrl = 8'h00;
-        reg_mod_routing = 8'h00;
-        reg_mod_depth_cutoff = 8'h00;
-        reg_mod_depth_resonance = 8'h00;
-        reg_mod_depth_pitch = 8'h00;
-        reg_bypass_ctrl = 8'h00;
-        reg_gain_square = 8'h00;
+        reg_attack = 8'h10;            // Fast attack
+        reg_decay = 8'h20;             // Medium decay
+        reg_sustain = 8'hC0;           // 75% sustain level
+        reg_release = 8'h30;           // Medium release
+        reg_amplitude = 8'hFF;         // Full master amplitude
+        reg_gain_square = 8'h00;       // All waveforms muted by default
         reg_gain_sawtooth = 8'h00;
         reg_gain_triangle = 8'h00;
         reg_gain_sine = 8'hFF;         // Sine at full by default
         reg_gain_noise = 8'h00;
-        reg_gain_wavetable = 8'h00;
-        reg_glide_rate = 8'h00;        // Instant frequency changes
-        reg_pwm_depth = 8'h00;         // No PWM modulation
-        reg_ring_mod_config = 8'h00;   // Ring mod disabled
     end
 
 endmodule

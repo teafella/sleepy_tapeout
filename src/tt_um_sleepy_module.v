@@ -36,44 +36,24 @@ module tt_um_sleepy_module (
 );
 
     // ========================================
-    // I2C Slave Interface - Register Bank
+    // I2C Slave Interface - Essential Register Bank (16 registers)
     // ========================================
     wire [7:0] reg_control;
-    wire [7:0] reg_waveform;
     wire [7:0] reg_freq_low;
     wire [7:0] reg_freq_mid;
     wire [7:0] reg_freq_high;
     wire [7:0] reg_duty;
-    wire [7:0] reg_phase_offset;
     wire [7:0] reg_attack;
     wire [7:0] reg_decay;
     wire [7:0] reg_sustain;
     wire [7:0] reg_release;
     wire [7:0] reg_amplitude;
-    wire [7:0] reg_svf1_cutoff;
-    wire [7:0] reg_svf1_resonance;
-    wire [7:0] reg_svf2_cutoff;
-    wire [7:0] reg_svf2_resonance;
-    wire [7:0] reg_filter_mode;
-    wire [7:0] reg_filter_enable;
-    wire [7:0] reg_wavetable_idx;
-    wire [7:0] reg_wavetable_data;
-    wire [7:0] reg_wavetable_ctrl;
-    wire [7:0] reg_mod_routing;
-    wire [7:0] reg_mod_depth_cutoff;
-    wire [7:0] reg_mod_depth_resonance;
-    wire [7:0] reg_mod_depth_pitch;
-    wire [7:0] reg_bypass_ctrl;
+    wire [7:0] reg_status;
     wire [7:0] reg_gain_square;
     wire [7:0] reg_gain_sawtooth;
     wire [7:0] reg_gain_triangle;
     wire [7:0] reg_gain_sine;
     wire [7:0] reg_gain_noise;
-    wire [7:0] reg_gain_wavetable;
-    wire [7:0] reg_glide_rate;
-    wire [7:0] reg_pwm_depth;
-    wire [7:0] reg_ring_mod_config;
-    wire [7:0] reg_status;
 
     // Combined frequency from three 8-bit registers
     wire [23:0] frequency = {reg_freq_high, reg_freq_mid, reg_freq_low};
@@ -101,42 +81,24 @@ module tt_um_sleepy_module (
         .sda_in(uio_in[0]),
         .sda_out(sda_out_i2c),
         .sda_oe(sda_oe_i2c),
+        // Essential registers only (16 total)
         .reg_control(reg_control),
-        .reg_waveform(reg_waveform),
         .reg_freq_low(reg_freq_low),
         .reg_freq_mid(reg_freq_mid),
         .reg_freq_high(reg_freq_high),
         .reg_duty(reg_duty),
-        .reg_phase_offset(reg_phase_offset),
         .reg_attack(reg_attack),
         .reg_decay(reg_decay),
         .reg_sustain(reg_sustain),
         .reg_release(reg_release),
         .reg_amplitude(reg_amplitude),
-        .reg_svf1_cutoff(reg_svf1_cutoff),
-        .reg_svf1_resonance(reg_svf1_resonance),
-        .reg_svf2_cutoff(reg_svf2_cutoff),
-        .reg_svf2_resonance(reg_svf2_resonance),
-        .reg_filter_mode(reg_filter_mode),
-        .reg_filter_enable(reg_filter_enable),
         .reg_status(reg_status),
-        .reg_wavetable_idx(reg_wavetable_idx),
-        .reg_wavetable_data(reg_wavetable_data),
-        .reg_wavetable_ctrl(reg_wavetable_ctrl),
-        .reg_mod_routing(reg_mod_routing),
-        .reg_mod_depth_cutoff(reg_mod_depth_cutoff),
-        .reg_mod_depth_resonance(reg_mod_depth_resonance),
-        .reg_mod_depth_pitch(reg_mod_depth_pitch),
-        .reg_bypass_ctrl(reg_bypass_ctrl),
         .reg_gain_square(reg_gain_square),
         .reg_gain_sawtooth(reg_gain_sawtooth),
         .reg_gain_triangle(reg_gain_triangle),
         .reg_gain_sine(reg_gain_sine),
         .reg_gain_noise(reg_gain_noise),
-        .reg_gain_wavetable(reg_gain_wavetable),
-        .reg_glide_rate(reg_glide_rate),
-        .reg_pwm_depth(reg_pwm_depth),
-        .reg_ring_mod_config(reg_ring_mod_config),
+        // Status inputs
         .status_gate_active(gate),
         .status_adsr_state(adsr_state_for_status),
         .status_osc_running(osc_running)
@@ -185,11 +147,8 @@ module tt_um_sleepy_module (
         .noise_out(noise_out)
     );
 
-    // Wavetable placeholder (not yet implemented)
-    wire [7:0] wavetable_out = 8'h00;
-
     // ========================================
-    // 6-Channel Waveform Mixer
+    // 6-Channel Waveform Mixer (5 active waveforms)
     // ========================================
     wire [7:0] mixed_wave;
 
@@ -201,13 +160,13 @@ module tt_um_sleepy_module (
         .triangle_in(triangle_out),
         .sine_in(sine_out),
         .noise_in(noise_out),
-        .wavetable_in(wavetable_out),
+        .wavetable_in(8'h00),  // Wavetable not implemented, tie to 0
         .gain_square(reg_gain_square),
         .gain_sawtooth(reg_gain_sawtooth),
         .gain_triangle(reg_gain_triangle),
         .gain_sine(reg_gain_sine),
         .gain_noise(reg_gain_noise),
-        .gain_wavetable(reg_gain_wavetable),
+        .gain_wavetable(8'h00),  // Wavetable gain tied to 0
         .mixed_out(mixed_wave)
     );
 
