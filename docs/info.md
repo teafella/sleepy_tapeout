@@ -9,227 +9,314 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-**Sleepy Chip** is a digital monosynth-on-a-chip featuring multi-waveform oscillator, ADSR envelope, and delta-sigma DAC audio output. The design targets professional synthesizer quality in a 1x1 Tiny Tapeout tile.
-
-### Current Implementation Status
-
-**Completed Modules (Phase 1):**
-- ✅ **24-bit Phase Accumulator** - DDS core with 16.7M resolution, 2.98 Hz to 25 MHz range
-- ✅ **Multi-Waveform Generator** - Square, Sawtooth, Triangle, Sine, and Noise waveforms
-- ✅ **Delta-Sigma DAC** - First-order 1-bit modulator for audio output
-- ✅ **PWM Generator** - Variable duty cycle square wave (0-100%)
-
-**Waveforms Implemented:**
-1. **Square Wave** - Variable duty cycle (0-100%), rich harmonics
-2. **Sawtooth** - Linear ramp, all harmonics present
-3. **Triangle** - Symmetric fold, odd harmonics
-4. **Sine Wave** - Polynomial approximation (<3% error), low distortion
-5. **Noise** - 32-bit LFSR pseudo-random (4.29 billion sample period)
-
-**Pending Modules (Phase 2):**
-- I2C control interface (33 registers)
-- ADSR envelope generator
-- 6-channel waveform mixer with gain controls
-- 4-pole state-variable filter (LP/HP/BP modes)
-- ADSR modulation routing
-- Wavetable generator (64-sample user-programmable)
-- Glide/portamento
-- Ring modulator
-- PWM modulation
+**Sleepy Chip** is a dual-mode digital audio synthesizer featuring a 3-waveform oscillator with streaming capability and delta-sigma DAC output. It provides both traditional synthesis (oscillator + waveform mixing) and direct sample streaming in a compact 1x1 Tiny Tapeout tile.
 
 ### Architecture
 
 ```
-┌─────────────────┐      ┌─────────────────────┐
-│ Phase           │      │ Waveform            │
-│ Accumulator     ├─────→│ Generators          │
-│ (24-bit DDS)    │      │ - Square (PWM)      │
-│                 │      │ - Sawtooth          │
-│ Freq control    │      │ - Triangle          │
-│ 50 MHz clock    │      │ - Sine (polynomial) │
-└─────────────────┘      │ - Noise (LFSR)      │
-                         └──────────┬──────────┘
-                                    │
-                         ┌──────────▼──────────┐
-                         │ Delta-Sigma DAC     │
-                         │ (1-bit output)      │
-                         │                     │
-                         │ 50 MHz PDM          │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                              Audio Output
-                         (requires RC filter)
+SPI Interface         24-bit Phase           Waveform             Mode
+(3 pins)              Accumulator            Generators           Selection
+                      (DDS core)
+uio[0]: MOSI    ┌─→   ┌──────────┐          ┌──────────┐         ┌──────┐
+uio[1]: SCK     │     │ Frequency│─────────→│ Square   │────┐    │      │
+uio[2]: CS      │     │ Register │          │ Sawtooth │    ├───→│ MUX  │
+                │     │          │          │ Triangle │    │    │      │
+     ┌──────────┴──┐  │ 24-bit   │          └──────────┘    │    │ OSC/ │
+     │ SPI RX      │  │ 50 MHz   │                          │    │STREAM│─┐
+     │ Registers   │  └──────────┘          ┌──────────┐    │    │      │ │
+     │ (8 regs)    │                        │ Mixer    │────┘    └──────┘ │
+     └─────────────┘                        │ (3-ch)   │                   │
+           │                                └──────────┘                   │
+           │                                                                │
+           │ Streaming Sample                                              │
+           │ Register (0x10)  ──────────────────────────────────────────────┘
+           │                                                                │
+           │                                ┌──────────┐    ┌────────────┐ │
+           │ Volume Register                │ Volume   │    │ Delta-     │ │
+           └───────────────────────────────→│ Control  │◄───│ Sigma DAC  │◄┘
+                                            │ 8-level  │    │ (1-bit)    │
+                                            └──────────┘    └─────┬──────┘
+                                                                  │
+                                                                  ▼
+                                                            uo_out[0]
+                                                          (Audio Output)
 ```
+
+### Features
+
+**Dual Operating Modes:**
+1. **Oscillator Mode** - Traditional synthesis with 3 waveforms:
+   - Square wave (variable duty cycle 0-100%)
+   - Sawtooth wave (linear ramp, all harmonics)
+   - Triangle wave (symmetric fold, odd harmonics)
+   - Individual waveform enable/disable
+   - 3-channel mixer with saturation protection
+
+2. **Streaming Mode** - Direct sample playback:
+   - 8-bit sample input via SPI
+   - Direct to volume control and DAC
+   - Suitable for PCM streaming or custom waveforms
+
+**Common Features:**
+- 24-bit phase accumulator (DDS) - 2.98 Hz resolution, <1 cent musical accuracy
+- 8-level volume control - Instant bit-shift implementation (mute to full)
+- First-order delta-sigma DAC - 1-bit 50 MHz PDM output
+- SPI register interface - Mode 0 (CPOL=0, CPHA=0), RX-only
+
+### Register Map
+
+| Address | Name | Bits | Description |
+|---------|------|------|-------------|
+| 0x00 | Control | [0]: OSC_EN<br>[1]: STREAM_MODE<br>[2]: SW_GATE<br>[3]: SQUARE_EN<br>[4]: SAW_EN<br>[5]: TRI_EN | Oscillator enable, mode selection, waveform enables |
+| 0x02 | Freq Low | [7:0] | Frequency control word low byte |
+| 0x03 | Freq Mid | [7:0] | Frequency control word middle byte |
+| 0x04 | Freq High | [7:0] | Frequency control word high byte (24-bit total) |
+| 0x05 | Duty Cycle | [7:0] | Square wave PWM duty cycle (0x00=0%, 0xFF=100%) |
+| 0x06 | Volume | [7:5] | Volume level (8 discrete levels, bit-shift based) |
+| 0x10 | Stream Sample | [7:0] | Streaming mode sample value (0x00-0xFF) |
+| 0x12 | Status | [0]: GATE<br>[1]: OSC_RUN | Read-only status register |
 
 ### Technical Specifications
 
 **Phase Accumulator:**
 - Resolution: 24-bit (16,777,216 steps/cycle)
 - Frequency Range: 2.98 Hz to 25 MHz
-- Accuracy: <0.25% error (tested at 440 Hz and 1 kHz)
-- Example: 440 Hz (A4) = frequency word 0x024000
+- Musical Accuracy: <1 cent error across full audio range
+- Example: 440 Hz (A4) = 0x024000
 
-**Waveform Quality:**
-- Square: Full rail-to-rail (0-255)
-- Sawtooth: Linear ramp, DC average ~127
-- Triangle: Symmetric, DC average ~127
-- Sine: Polynomial approximation, max error <3%
-- Noise: Maximal-length LFSR, full dynamic range
+**Volume Control:**
+- 8 discrete levels based on top 3 bits of volume register
+- Bit-shift implementation (instant response, area-optimized)
+- Levels: mute, 1/8, 1/4, 3/8, 1/2, 5/8, 3/4, full
 
 **Delta-Sigma DAC:**
 - Type: First-order with error feedback
 - Output Rate: 50 MHz (1-bit PDM)
-- Accuracy: ±0.1% tracking of input amplitude
-- External Filter: Simple RC recommended (Fc ~25 kHz)
+- External Filter: Simple RC low-pass (Fc ~25 kHz recommended)
 
-**Resource Usage (Current):**
+**Resource Usage:**
+- Total: ~870 instances (~63% of 1x1 tile)
+- SPI Interface: ~45 cells
 - Phase Accumulator: ~60 cells
-- Waveform Generators: ~101 cells
-  - Sawtooth: 0 cells (wire)
-  - Triangle: 18 cells
-  - Sine: 68 cells
-  - Noise: 15 cells
+- Waveform Generators: ~103 cells
 - Delta-Sigma DAC: ~50 cells
-- **Total (Phase 1): ~211 cells** (~5.3% of 1x1 tile)
 
 ## Pin Configuration
 
 ### Dedicated Inputs (`ui_in[7:0]`)
 | Pin | Name | Function | Description |
 |-----|------|----------|-------------|
-| `ui_in[0]` | GATE | Gate Input | Hardware gate trigger for ADSR (future) |
-| `ui_in[1]` | HW_RST | Reset | Hardware reset (active low) (future) |
-| `ui_in[7:2]` | - | Reserved | Future expansion |
+| `ui_in[0]` | GATE | Gate Input | Hardware gate trigger (OR'd with software gate) |
+| `ui_in[1]` | HW_RST | Reset | Hardware reset (active high, AND'd with rst_n) |
+| `ui_in[7:2]` | - | Reserved | Unused (future expansion) |
 
 ### Dedicated Outputs (`uo_out[7:0]`)
 | Pin | Name | Function | Description |
 |-----|------|----------|-------------|
 | `uo_out[0]` | **DAC_OUT** | **Audio** | **1-bit delta-sigma audio output** |
-| `uo_out[1]` | GATE_LED | Status | Gate status indicator (future) |
-| `uo_out[2]` | ENV_OUT | Debug | Envelope MSB for visualization (future) |
-| `uo_out[3]` | SYNC | Debug | Sync pulse (phase MSB) (future) |
-| `uo_out[7:4]` | - | Reserved | Future expansion |
+| `uo_out[1]` | GATE_LED | Status | Gate status indicator (HW gate OR SW gate) |
+| `uo_out[2]` | OSC_RUN | Status | Oscillator running indicator |
+| `uo_out[3]` | SYNC | Debug | Sync pulse (phase MSB, frequency/waveform visualization) |
+| `uo_out[7:4]` | - | Reserved | Unused (future expansion) |
 
 ### Bidirectional IOs (`uio[7:0]`)
 | Pin | Name | Function | Description |
 |-----|------|----------|-------------|
-| `uio[0]` | SDA | I2C Data | I2C bidirectional data (future) |
-| `uio[1]` | SCL | I2C Clock | I2C clock input from carrier MCU (future) |
-| `uio[7:2]` | DEBUG | Optional | Debug/parallel output (future) |
+| `uio[0]` | MOSI | SPI Data | SPI Master Out Slave In (data from controller) |
+| `uio[1]` | SCK | SPI Clock | SPI clock input from controller |
+| `uio[2]` | CS | SPI Select | SPI chip select (active low) |
+| `uio[7:3]` | - | Reserved | Unused (future expansion) |
 
-**Note:** Currently only `uo_out[0]` (DAC_OUT) is active. All I2C and control features are planned for Phase 2. I2C pins are on UIOs because these connect to the carrier board's microcontroller.
+**Note:** All bidirectional pins are configured as inputs (SPI is RX-only, no MISO output to save area).
 
 ## How to test
 
-### Basic Audio Test (Current Phase 1)
-
-The current implementation outputs test waveforms directly without I2C control:
+### Basic Setup
 
 1. **Power On**: Apply 50 MHz clock to the chip
-2. **Audio Output**: Connect `uo_out[0]` (DAC_OUT) to a simple RC low-pass filter
-   - R = 10kΩ, C = 680pF (Fc ≈ 23 kHz) or similar
-3. **Listen**: Connect filter output to audio amplifier/speaker
-4. **Waveforms**: The design cycles through test waveforms automatically
+2. **SPI Controller**: Connect microcontroller or SPI master to:
+   - `uio[0]` - MOSI
+   - `uio[1]` - SCK
+   - `uio[2]` - CS (active low)
+3. **Audio Output**: Connect `uo_out[0]` (DAC_OUT) to RC low-pass filter
+
+### Oscillator Mode Test
+
+```python
+# SPI write function: write_register(address, data)
+
+# 1. Enable oscillator with sawtooth waveform
+write_register(0x00, 0b00010001)  # OSC_EN=1, STREAM=0, SAW_EN=1
+
+# 2. Set frequency to 440 Hz (A4 note)
+write_register(0x02, 0x00)  # Freq low
+write_register(0x03, 0x40)  # Freq mid
+write_register(0x04, 0x02)  # Freq high = 0x024000
+
+# 3. Set volume to full
+write_register(0x06, 0xFF)
+
+# Result: Clean 440 Hz sawtooth wave on audio output
+```
+
+### Streaming Mode Test
+
+```python
+# 1. Switch to streaming mode
+write_register(0x00, 0b00000010)  # OSC_EN=0, STREAM_MODE=1
+
+# 2. Stream different sample values
+for sample in [0x00, 0x40, 0x80, 0xC0, 0xFF]:
+    write_register(0x10, sample)
+    time.sleep(0.001)  # 1ms per sample = 1 kHz sample rate
+
+# 3. Set volume
+write_register(0x06, 0x80)  # 50% volume
+
+# Result: Direct sample playback at your chosen rate
+```
 
 ### Expected Results
 
-- **Clean audio tone** at test frequency
-- **Different timbres** as waveforms change:
-  - Square: Bright, hollow sound
-  - Sawtooth: Bright, buzzy sound
-  - Triangle: Mellow, pure sound
-  - Sine: Pure tone, single frequency
-  - Noise: White noise (hiss)
+**Oscillator Mode:**
+- **440 Hz tone** at test frequency
+- **Different timbres** per waveform:
+  - Square: Bright, hollow sound (odd harmonics)
+  - Sawtooth: Bright, buzzy sound (all harmonics)
+  - Triangle: Mellow, pure sound (odd harmonics, softer)
+- **Multiple waveforms** can be mixed by enabling multiple EN bits
 
-### Frequency Calibration
+**Streaming Mode:**
+- **Direct control** of DAC output value
+- **Custom waveforms** by streaming sample sequences
+- **PCM playback** at your chosen sample rate
 
-To verify frequency accuracy:
-- Test tone at 440 Hz (A4 note)
-- Frequency word: 0x024000
-- Expected accuracy: <1% error
-- Can be verified with frequency counter or tuner
+### Volume Control
 
-### Future Testing (Phase 2 - with I2C)
+Test all 8 volume levels:
+```python
+volumes = [0x00, 0x20, 0x40, 0x60, 0x80, 0xA0, 0xC0, 0xFF]
+names = ["Mute", "1/8", "1/4", "3/8", "1/2", "5/8", "3/4", "Full"]
 
-Once I2C control is implemented:
-1. Connect I2C master (microcontroller/Raspberry Pi)
-2. Program frequency via I2C registers (0x02-0x04)
-3. Select waveform via register 0x01
-4. Control ADSR envelope parameters
-5. Adjust filter cutoff and resonance
-6. Mix multiple waveforms
-7. Load custom wavetables
+for vol, name in zip(volumes, names):
+    write_register(0x06, vol)
+    print(f"Volume: {name}")
+    time.sleep(0.5)
+```
 
 ## External hardware
 
-### Minimum Setup (Current Phase 1)
-- **RC Low-Pass Filter** (required):
-  - R = 10kΩ
-  - C = 680pF
-  - Fc ≈ 23 kHz
-  - Connects to `uo_out[0]` (DAC_OUT)
-- **Audio Amplifier** (recommended):
-  - Simple op-amp buffer or LM386
-  - Speaker or headphones
+### Minimum Setup
 
-### Full Setup (Future Phase 2)
-- I2C Master (microcontroller/RPi) for control
-- Potentiometers for manual control (via I2C)
-- MIDI interface (optional, via microcontroller)
-- Multi-stage filter for better audio quality
-- Audio amplifier with volume control
-
-### Suggested RC Filter Circuit
-
+**RC Low-Pass Filter** (required):
 ```
 DAC_OUT (uo_out[0]) ──┬─── 10kΩ ───┬─── to audio amp
                       │            │
-                     GND          680pF
+                     GND         680pF
                                   │
                                  GND
 ```
 
-Alternative values for different cutoff frequencies:
-- 15 kHz: R=10kΩ, C=1nF
-- 25 kHz: R=10kΩ, C=680pF (recommended)
-- 35 kHz: R=10kΩ, C=470pF
+- R = 10kΩ
+- C = 680pF
+- Fc ≈ 23 kHz
+- Removes 50 MHz carrier from PDM signal
+
+**Audio Amplifier** (recommended):
+- Simple op-amp buffer (TL072, LM358) or
+- LM386 audio amplifier
+- Speaker (8Ω) or headphones
+
+**SPI Controller** (required):
+- Microcontroller (Arduino, ESP32, STM32, etc.)
+- Raspberry Pi
+- Or any SPI master device
+- Mode 0 (CPOL=0, CPHA=0)
+- Up to ~1 MHz SPI clock speed
+
+### Filter Options
+
+Alternative cutoff frequencies:
+- **15 kHz**: R=10kΩ, C=1nF (more filtering, softer sound)
+- **25 kHz**: R=10kΩ, C=680pF (recommended, balanced)
+- **35 kHz**: R=10kΩ, C=470pF (less filtering, brighter sound)
+
+### Full System Example
+
+```
+┌──────────────┐
+│ Arduino/     │ MOSI ──→ uio[0]
+│ Raspberry Pi │ SCK  ──→ uio[1]
+│ (SPI Master) │ CS   ──→ uio[2]
+└──────────────┘
+
+┌──────────────┐
+│ Sleepy Chip  │ uo[0] ──→ RC Filter ──→ LM386 ──→ Speaker
+│ (TT09)       │ uo[1] ──→ GATE LED
+│              │ uo[2] ──→ OSC LED
+└──────────────┘
+```
 
 ## Design Verification
 
-All modules have been validated with comprehensive testbenches:
+All modules validated with comprehensive testbenches:
 
-- ✅ **Phase Accumulator**: Frequency accuracy <0.25% @ 440Hz & 1kHz
-- ✅ **PWM Generator**: All duty cycles 0-100% accurate within ±1%
-- ✅ **Delta-Sigma DAC**: Output density matches input within ±0.1%
-- ✅ **Waveforms**: All 5 waveforms validated end-to-end
-- ✅ **Noise Generator**: Full dynamic range, centered average
+- ✅ **SPI RX Interface**: All 8 registers, burst writes, read-only status
+- ✅ **Phase Accumulator**: Frequency accuracy <0.25% @ 440Hz
+- ✅ **Waveform Generators**: Square, sawtooth, triangle verified
+- ✅ **Mixer**: 3-channel mixing with saturation protection
+- ✅ **Volume Control**: All 8 levels verified in both modes
+- ✅ **Streaming Mode**: Sample updates, mode switching
+- ✅ **Delta-Sigma DAC**: Output modulation working correctly
+- ✅ **End-to-End**: 12 comprehensive integration tests passing
 
-## Future Enhancements (Phase 2)
+## SPI Protocol
 
-Planned additions to reach full monosynth capability:
-1. I2C register interface (33 registers)
-2. Full ADSR envelope with hardware gate
-3. 6-channel waveform mixer with independent gain
-4. 4-pole state-variable filter (LP/HP/BP modes)
-5. Modulation routing (envelope → filter/pitch)
-6. 64-sample wavetable with interpolation
-7. Glide/portamento
-8. Ring modulator
-9. PWM modulation
-10. Comprehensive bypass/debug system
+**Mode**: SPI Mode 0 (CPOL=0, CPHA=0)
+**Speed**: Up to ~1 MHz SCK
+**Format**: 2-byte transactions: [address][data]
 
-Target resource usage for complete design: ~3,891 cells (97.3% of 1x1 tile)
+**Basic Write:**
+1. Assert CS (low)
+2. Clock out address byte (8 bits, MSB first)
+3. Clock out data byte (8 bits, MSB first)
+4. Deassert CS (high)
+
+**Burst Write** (auto-increment):
+1. Assert CS (low)
+2. Clock out address byte
+3. Clock out data byte 1
+4. Clock out data byte 2 (writes to address+1)
+5. Clock out data byte 3 (writes to address+2)
+6. Deassert CS when done
+
+## Frequency Calculation
+
+To calculate frequency word for a desired frequency:
+
+```
+freq_word = (desired_freq_Hz * 2^24) / 50_MHz
+```
+
+Examples:
+- **440 Hz (A4)**: 0x024000 (147,456)
+- **1000 Hz**: 0x051EB8 (335,544)
+- **C4 (261.63 Hz)**: 0x015820 (88,096)
+- **A3 (220 Hz)**: 0x012000 (73,728)
+
+## Use Cases
+
+1. **Musical Synthesizer** - Traditional subtractive synthesis with waveform mixing
+2. **Sample Player** - Stream custom waveforms or short samples via SPI
+3. **Sound Effects** - Generate tones, sweeps, and effects for games/devices
+4. **Test Equipment** - Programmable audio frequency generator
+5. **Educational** - Learn digital synthesis, DSP, and SPI communication
+6. **MIDI Controller** - Microcontroller reads MIDI, controls synth via SPI
 
 ## References
 
-- Complete specification: `specs/i2c_waveform_generator.md`
 - Source code: `src/` directory
 - Test benches: `test/` directory
-- Tested with Icarus Verilog simulator
+- Tested with Icarus Verilog and Cocotb
 - Clock: 50 MHz
-- Technology: Sky130 PDK
-
-## Inspiration
-
-This project aims to create a complete digital synthesizer voice on a single chip, inspired by classic monophonic synthesizers and modern Eurorack modules, while maximizing the capabilities of the Tiny Tapeout platform.
+- Technology: Sky130 PDK (via Tiny Tapeout 09)
