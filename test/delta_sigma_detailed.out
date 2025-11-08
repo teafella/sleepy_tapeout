@@ -1,0 +1,407 @@
+#! /opt/homebrew/Cellar/icarus-verilog/12.0/bin/vvp
+:ivl_version "12.0 (stable)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision - 12;
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/system.vpi";
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/vhdl_sys.vpi";
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/vhdl_textio.vpi";
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/v2005_math.vpi";
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/va_math.vpi";
+:vpi_module "/opt/homebrew/Cellar/icarus-verilog/12.0/lib/ivl/v2009.vpi";
+S_0x13370d6d0 .scope package, "$unit" "$unit" 2 1;
+ .timescale 0 0;
+S_0x13370d840 .scope module, "test_delta_sigma_detailed" "test_delta_sigma_detailed" 3 10;
+ .timescale -9 -12;
+v0x13371e290_0 .var "clk", 0 0;
+v0x13371e350_0 .net "dac_out", 0 0, L_0x13371e6d0;  1 drivers
+v0x13371e400_0 .var "data_in", 7 0;
+v0x13371e4d0_0 .var/i "ones_count", 31 0;
+v0x13371e560_0 .var "pattern", 255 0;
+v0x13371e640_0 .var "rst_n", 0 0;
+S_0x13370d9b0 .scope module, "dut" "delta_sigma_dac" 3 19, 4 26 0, S_0x13370d840;
+ .timescale -9 -12;
+    .port_info 0 /INPUT 1 "clk";
+    .port_info 1 /INPUT 1 "rst_n";
+    .port_info 2 /INPUT 8 "data_in";
+    .port_info 3 /OUTPUT 1 "dac_out";
+L_0x13371e6d0 .functor BUFZ 1, v0x13371db30_0, C4<0>, C4<0>, C4<0>;
+v0x133709ab0_0 .net "clk", 0 0, v0x13371e290_0;  1 drivers
+v0x13371da90_0 .net "dac_out", 0 0, L_0x13371e6d0;  alias, 1 drivers
+v0x13371db30_0 .var "dac_out_reg", 0 0;
+v0x13371dbe0_0 .net "data_in", 7 0, v0x13371e400_0;  1 drivers
+v0x13371dc90_0 .var/s "error_acc", 9 0;
+v0x13371dd80_0 .net "rst_n", 0 0, v0x13371e640_0;  1 drivers
+E_0x133705bf0/0 .event negedge, v0x13371dd80_0;
+E_0x133705bf0/1 .event posedge, v0x133709ab0_0;
+E_0x133705bf0 .event/or E_0x133705bf0/0, E_0x133705bf0/1;
+S_0x13371de60 .scope task, "test_input_value" "test_input_value" 3 71, 3 71 0, S_0x13370d840;
+ .timescale -9 -12;
+v0x13371e070_0 .var "description", 255 0;
+v0x13371e120_0 .var/i "j", 31 0;
+v0x13371e1d0_0 .var "test_value", 7 0;
+E_0x13371e030 .event posedge, v0x133709ab0_0;
+TD_test_delta_sigma_detailed.test_input_value ;
+    %vpi_call/w 3 76 "$display", "\012--- Test: %s ---", v0x13371e070_0 {0 0 0};
+    %load/vec4 v0x13371e1d0_0;
+    %store/vec4 v0x13371e400_0, 0, 8;
+    %pushi/vec4 10, 0, 32;
+T_0.0 %dup/vec4;
+    %pushi/vec4 0, 0, 32;
+    %cmp/s;
+    %jmp/1xz T_0.1, 5;
+    %jmp/1 T_0.1, 4;
+    %pushi/vec4 1, 0, 32;
+    %sub;
+    %wait E_0x13371e030;
+    %jmp T_0.0;
+T_0.1 ;
+    %pop/vec4 1;
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0x13371e4d0_0, 0, 32;
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0x13371e120_0, 0, 32;
+T_0.2 ;
+    %load/vec4 v0x13371e120_0;
+    %cmpi/s 256, 0, 32;
+    %jmp/0xz T_0.3, 5;
+    %wait E_0x13371e030;
+    %load/vec4 v0x13371e350_0;
+    %ix/getv/s 4, v0x13371e120_0;
+    %store/vec4 v0x13371e560_0, 4, 1;
+    %load/vec4 v0x13371e350_0;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_0.4, 8;
+    %load/vec4 v0x13371e4d0_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0x13371e4d0_0, 0, 32;
+T_0.4 ;
+    %load/vec4 v0x13371e120_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0x13371e120_0, 0, 32;
+    %jmp T_0.2;
+T_0.3 ;
+    %vpi_call/w 3 91 "$write", "Pattern (first 64 bits): " {0 0 0};
+    %pushi/vec4 0, 0, 32;
+    %store/vec4 v0x13371e120_0, 0, 32;
+T_0.6 ;
+    %load/vec4 v0x13371e120_0;
+    %cmpi/s 64, 0, 32;
+    %jmp/0xz T_0.7, 5;
+    %vpi_call/w 3 93 "$write", "%0d", &PV<v0x13371e560_0, v0x13371e120_0, 1> {0 0 0};
+    %load/vec4 v0x13371e120_0;
+    %addi 1, 0, 32;
+    %pushi/vec4 8, 0, 32;
+    %mod/s;
+    %cmpi/e 0, 0, 32;
+    %jmp/0xz  T_0.8, 4;
+    %vpi_call/w 3 94 "$write", " " {0 0 0};
+T_0.8 ;
+    %load/vec4 v0x13371e120_0;
+    %addi 1, 0, 32;
+    %store/vec4 v0x13371e120_0, 0, 32;
+    %jmp T_0.6;
+T_0.7 ;
+    %vpi_call/w 3 96 "$write", "\012" {0 0 0};
+    %load/vec4 v0x13371e4d0_0;
+    %muli 100, 0, 32;
+    %pushi/vec4 256, 0, 32;
+    %div/s;
+    %vpi_call/w 3 99 "$display", "Output density: %0d/256 = %0d%%", v0x13371e4d0_0, S<0,vec4,s32> {1 0 0};
+    %load/vec4 v0x13371e1d0_0;
+    %pad/u 32;
+    %muli 100, 0, 32;
+    %pushi/vec4 256, 0, 32;
+    %div;
+    %vpi_call/w 3 100 "$display", "Expected: ~%0d%%", S<0,vec4,u32> {1 0 0};
+    %load/vec4 v0x13371e1d0_0;
+    %cmpi/e 0, 0, 8;
+    %jmp/0xz  T_0.10, 4;
+    %load/vec4 v0x13371e4d0_0;
+    %cmpi/s 5, 0, 32;
+    %flag_or 5, 4;
+    %jmp/0xz  T_0.12, 5;
+    %vpi_call/w 3 106 "$display", "PASS: Zero input produces minimal output" {0 0 0};
+    %jmp T_0.13;
+T_0.12 ;
+    %vpi_call/w 3 108 "$display", "FAIL: Zero input produced %0d ones (expected \342\211\2445)", v0x13371e4d0_0 {0 0 0};
+T_0.13 ;
+    %jmp T_0.11;
+T_0.10 ;
+    %load/vec4 v0x13371e1d0_0;
+    %pad/u 32;
+    %muli 256, 0, 32;
+    %pushi/vec4 255, 0, 32;
+    %div;
+    %subi 13, 0, 32;
+    %load/vec4 v0x13371e4d0_0;
+    %cmp/u;
+    %flag_or 5, 4;
+    %flag_get/vec4 5;
+    %jmp/0 T_0.16, 5;
+    %load/vec4 v0x13371e4d0_0;
+    %load/vec4 v0x13371e1d0_0;
+    %pad/u 32;
+    %muli 256, 0, 32;
+    %pushi/vec4 255, 0, 32;
+    %div;
+    %addi 13, 0, 32;
+    %cmp/u;
+    %flag_get/vec4 4;
+    %flag_get/vec4 5;
+    %or;
+    %and;
+T_0.16;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_0.14, 8;
+    %vpi_call/w 3 112 "$display", "PASS: Within \302\2615%% tolerance" {0 0 0};
+    %jmp T_0.15;
+T_0.14 ;
+    %vpi_call/w 3 114 "$display", "FAIL: Outside \302\2615%% tolerance" {0 0 0};
+T_0.15 ;
+T_0.11 ;
+    %end;
+    .scope S_0x13370d9b0;
+T_1 ;
+    %wait E_0x133705bf0;
+    %load/vec4 v0x13371dd80_0;
+    %nor/r;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_1.0, 8;
+    %pushi/vec4 0, 0, 10;
+    %assign/vec4 v0x13371dc90_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v0x13371db30_0, 0;
+    %jmp T_1.1;
+T_1.0 ;
+    %load/vec4 v0x13371dc90_0;
+    %pushi/vec4 0, 0, 2;
+    %load/vec4 v0x13371dbe0_0;
+    %concat/vec4; draw_concat_vec4
+    %add;
+    %load/vec4 v0x13371db30_0;
+    %flag_set/vec4 8;
+    %jmp/0 T_1.2, 8;
+    %pushi/vec4 255, 0, 10;
+    %jmp/1 T_1.3, 8;
+T_1.2 ; End of true expr.
+    %pushi/vec4 0, 0, 10;
+    %jmp/0 T_1.3, 8;
+ ; End of false expr.
+    %blend;
+T_1.3;
+    %sub;
+    %assign/vec4 v0x13371dc90_0, 0;
+    %pushi/vec4 0, 0, 10;
+    %load/vec4 v0x13371dc90_0;
+    %cmp/s;
+    %flag_get/vec4 4;
+    %flag_get/vec4 5;
+    %or;
+    %assign/vec4 v0x13371db30_0, 0;
+T_1.1 ;
+    %jmp T_1;
+    .thread T_1;
+    .scope S_0x13370d840;
+T_2 ;
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x13371e290_0, 0, 1;
+T_2.0 ;
+    %delay 10000, 0;
+    %load/vec4 v0x13371e290_0;
+    %inv;
+    %store/vec4 v0x13371e290_0, 0, 1;
+    %jmp T_2.0;
+    %end;
+    .thread T_2;
+    .scope S_0x13370d840;
+T_3 ;
+    %vpi_call/w 3 39 "$dumpfile", "delta_sigma_detailed.vcd" {0 0 0};
+    %vpi_call/w 3 40 "$dumpvars", 32'sb00000000000000000000000000000000, S_0x13370d840 {0 0 0};
+    %pushi/vec4 0, 0, 1;
+    %store/vec4 v0x13371e640_0, 0, 1;
+    %pushi/vec4 0, 0, 8;
+    %store/vec4 v0x13371e400_0, 0, 8;
+    %delay 100000, 0;
+    %pushi/vec4 1, 0, 1;
+    %store/vec4 v0x13371e640_0, 0, 1;
+    %delay 100000, 0;
+    %vpi_call/w 3 51 "$display", "=== Delta-Sigma DAC Detailed Test ===\012" {0 0 0};
+    %pushi/vec4 0, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 12408, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 808460328, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 808399413, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891305248, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 807740713, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 64, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 813184048, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 539506228, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 791819573, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540876850, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891626793, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 128, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 48, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 2016948256, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 674312760, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 791819573, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540876853, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 807740713, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 192, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 48, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 2017669152, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 674314546, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 791819573, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540876855, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891626793, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 255, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 12408, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 1179000872, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 842347823, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 842347808, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 1025519920, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 807740713, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 32, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 12408, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 842014760, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 858926898, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 892674109, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540095022, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891626793, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 224, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 3176517, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 807413810, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 842280754, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 892674109, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540555054, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891626793, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %pushi/vec4 16, 0, 8;
+    %store/vec4 v0x13371e1d0_0, 0, 8;
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %pushi/vec4 0, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 12408, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 825237544, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 825634610, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 892674109, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 540421682, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %pushi/vec4 891626793, 0, 32; draw_string_vec4
+    %concat/vec4; draw_string_vec4
+    %store/vec4 v0x13371e070_0, 0, 256;
+    %fork TD_test_delta_sigma_detailed.test_input_value, S_0x13371de60;
+    %join;
+    %vpi_call/w 3 65 "$display", "\012=== All tests completed ===" {0 0 0};
+    %delay 1000000, 0;
+    %vpi_call/w 3 67 "$finish" {0 0 0};
+    %end;
+    .thread T_3;
+    .scope S_0x13370d840;
+T_4 ;
+    %delay 1410065408, 2;
+    %vpi_call/w 3 122 "$display", "ERROR: Testbench timeout!" {0 0 0};
+    %vpi_call/w 3 123 "$finish" {0 0 0};
+    %end;
+    .thread T_4;
+# The file index is used to find the file name in the following table.
+:file_names 5;
+    "N/A";
+    "<interactive>";
+    "-";
+    "test/test_delta_sigma_detailed.v";
+    "src/delta_sigma_dac.v";
