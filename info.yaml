@@ -4,14 +4,16 @@ project:
   title:        "Sleepy Chip"      # Project title
   author:       "Ron Sardarian"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "SPI-controlled wavetable synthesizer with interpolation and delta-sigma DAC"      # One line description of what your project does
+  description:  "SPI-controlled 3-waveform synthesizer with streaming mode and delta-sigma DAC"      # One line description of what your project does
   language:     "SystemVerilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     50000000       # Clock frequency in Hz (or 0 if not applicable) 50Mhz
   top_module:   "tt_um_sleepy_module"  # Top-level module name
   source_files:                 # List of source files
     - "tt_um_sleepy_module.v"
     - "spi_rx_registers.v"
-    - "wavetable_oscillator.v"
+    - "phase_accumulator.v"
+    - "waveform_generators.v"
+    - "waveform_mixer.v"
     - "delta_sigma_dac.v"
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.

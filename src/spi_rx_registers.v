@@ -1,11 +1,11 @@
 /*
- * SPI RX Slave with Register Bank (Wavetable Synthesizer)
+ * SPI RX Slave with Register Bank (Minimal - Area-Optimized)
  *
- * This module implements a minimal SPI slave receiver for the wavetable synthesizer.
+ * This module implements a minimal SPI slave receiver for the synthesizer.
  * It supports:
  * - SPI Mode 0 (CPOL=0, CPHA=0): Sample on rising edge, shift on falling edge
  * - RX-only (no MISO, saves area)
- * - 12 registers total (control + frequency + volume + 8 wavetable samples)
+ * - 8 essential registers (includes streaming sample)
  * - Simple 2-byte protocol: [address][data]
  * - Burst writes with auto-increment
  *
@@ -26,14 +26,15 @@
  * - SCK:  SPI Clock (from master)
  * - CS:   Chip Select (active low)
  *
- * Register Map (12 registers total):
- * 0x00: Control (bit 0=OSC_EN, bit 1=STREAM_MODE, bit 2=SW_GATE)
+ * Register Map (8 registers):
+ * 0x00: Control (bit 0=OSC_EN, bit 1=STREAM_MODE, bit 2=SW_GATE, bits 3-5=waveform enables)
  * 0x02-0x04: Frequency (24-bit, little-endian)
- * 0x05: Volume (8-level bit-shift: 0x00=mute, 0xFF=full)
- * 0x10-0x17: Wavetable (8 samples, 8-bit each)
- * 0x18: Status (read-only, writes ignored)
+ * 0x05: Duty cycle (square wave PWM)
+ * 0x06: Volume (8-level bit-shift: 0x00=mute, 0xFF=full)
+ * 0x10: Streaming sample (8-bit sample for direct DAC output)
+ * 0x12: Status (read-only, writes ignored)
  *
- * Resource Usage: ~45 cells (SPI interface only, wavetable RAM in oscillator)
+ * Resource Usage: ~45 cells
  */
 
 module spi_rx_registers (
@@ -45,21 +46,15 @@ module spi_rx_registers (
     input  wire        spi_sck,        // SPI Clock (uio[1])
     input  wire        spi_cs,         // Chip Select, active low (uio[2])
 
-    // Register outputs (12 registers total)
-    output reg [7:0]   reg_control,       // 0x00: Control (OSC_EN, STREAM_MODE, SW_GATE)
+    // Essential register outputs (8 registers total)
+    output reg [7:0]   reg_control,       // 0x00: Control with waveform enables + STREAM_MODE
     output reg [7:0]   reg_freq_low,      // 0x02: Frequency low byte
     output reg [7:0]   reg_freq_mid,      // 0x03: Frequency mid byte
     output reg [7:0]   reg_freq_high,     // 0x04: Frequency high byte
-    output reg [7:0]   reg_volume,        // 0x05: Master volume (8-level 0x00-0xFF)
-    output reg [7:0]   reg_wavetable_0,   // 0x10: Wavetable sample 0
-    output reg [7:0]   reg_wavetable_1,   // 0x11: Wavetable sample 1
-    output reg [7:0]   reg_wavetable_2,   // 0x12: Wavetable sample 2
-    output reg [7:0]   reg_wavetable_3,   // 0x13: Wavetable sample 3
-    output reg [7:0]   reg_wavetable_4,   // 0x14: Wavetable sample 4
-    output reg [7:0]   reg_wavetable_5,   // 0x15: Wavetable sample 5
-    output reg [7:0]   reg_wavetable_6,   // 0x16: Wavetable sample 6
-    output reg [7:0]   reg_wavetable_7,   // 0x17: Wavetable sample 7
-    output wire [7:0]  reg_status,        // 0x18: Read-only status
+    output reg [7:0]   reg_duty,          // 0x05: Square wave duty cycle
+    output reg [7:0]   reg_volume,        // 0x06: Master volume (8-level bit-shift)
+    output reg [7:0]   reg_stream_sample, // 0x10: Streaming sample (direct DAC)
+    output wire [7:0]  reg_status,        // 0x12: Read-only status
 
     // Status inputs (for read-only status register)
     input  wire        status_gate_active,
@@ -163,7 +158,7 @@ module spi_rx_registers (
     assign reg_status = {6'b000000, status_osc_running, status_gate_active};
 
     // ========================================
-    // Register Write Task (12 registers total)
+    // Register Write Task (8 essential registers)
     // ========================================
     task write_register;
         input [7:0] addr;
@@ -174,16 +169,10 @@ module spi_rx_registers (
                 8'h02: reg_freq_low <= data;
                 8'h03: reg_freq_mid <= data;
                 8'h04: reg_freq_high <= data;
-                8'h05: reg_volume <= data;
-                8'h10: reg_wavetable_0 <= data;
-                8'h11: reg_wavetable_1 <= data;
-                8'h12: reg_wavetable_2 <= data;
-                8'h13: reg_wavetable_3 <= data;
-                8'h14: reg_wavetable_4 <= data;
-                8'h15: reg_wavetable_5 <= data;
-                8'h16: reg_wavetable_6 <= data;
-                8'h17: reg_wavetable_7 <= data;
-                // 0x18 is read-only status register, writes ignored
+                8'h05: reg_duty <= data;
+                8'h06: reg_volume <= data;
+                8'h10: reg_stream_sample <= data;
+                // 0x12 is read-only status register, writes ignored
                 default: begin
                     // Invalid address, ignore
                 end
@@ -192,24 +181,16 @@ module spi_rx_registers (
     endtask
 
     // ========================================
-    // Register Initialization (12 registers total)
+    // Register Initialization (8 essential registers)
     // ========================================
     initial begin
-        reg_control = 8'b00000000;     // Oscillator disabled, wavetable mode, gate off
+        reg_control = 8'b00011100;     // OSC=0, STREAM=0, SW_GATE=0, all waveforms enabled
         reg_freq_low = 8'h00;
         reg_freq_mid = 8'h00;
         reg_freq_high = 8'h00;
+        reg_duty = 8'h80;              // 50% duty cycle
         reg_volume = 8'hFF;            // Full volume by default
-
-        // Initialize wavetable with sawtooth (example)
-        reg_wavetable_0 = 8'd0;
-        reg_wavetable_1 = 8'd36;
-        reg_wavetable_2 = 8'd73;
-        reg_wavetable_3 = 8'd109;
-        reg_wavetable_4 = 8'd146;
-        reg_wavetable_5 = 8'd182;
-        reg_wavetable_6 = 8'd219;
-        reg_wavetable_7 = 8'd255;
+        reg_stream_sample = 8'h80;     // Middle value (128) for streaming
     end
 
 endmodule
