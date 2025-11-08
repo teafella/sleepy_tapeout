@@ -145,10 +145,19 @@ module tt_um_sleepy_module (
     // ========================================
     // Volume Control
     // ========================================
-    // Simple 8×8 multiplier for volume control
+    // Simple 8×8 multiplier for volume control with pipeline register
     // volume=0xFF → full volume, volume=0x00 → mute
     wire [15:0] volume_product = mixed_wave * reg_volume;
-    wire [7:0] volume_scaled = volume_product[15:8];
+    wire [7:0] volume_scaled_comb = volume_product[15:8];
+
+    // Pipeline register to break up combinational path and reduce buffering
+    reg [7:0] volume_scaled;
+    always @(posedge clk or negedge system_rst_n) begin
+        if (!system_rst_n)
+            volume_scaled <= 8'h00;
+        else
+            volume_scaled <= volume_scaled_comb;
+    end
 
     // ========================================
     // Delta-Sigma DAC (1-bit output)
@@ -158,7 +167,7 @@ module tt_um_sleepy_module (
     delta_sigma_dac dac (
         .clk(clk),
         .rst_n(system_rst_n),
-        .data_in(volume_scaled),  // Volume-controlled signal
+        .data_in(volume_scaled),  // Volume-controlled signal (registered)
         .dac_out(dac_out)
     );
 
