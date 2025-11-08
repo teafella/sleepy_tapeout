@@ -10,14 +10,20 @@ module tb;
     reg clk;
     reg rst_n;
     reg ena;
-    
+
     // I/O signals
     reg [7:0] ui_in;
     wire [7:0] uo_out;
     reg [7:0] uio_in;
     wire [7:0] uio_out;
     wire [7:0] uio_oe;
-    
+
+    // Power pins for gate-level simulation
+    `ifdef GL_TEST
+    wire VPWR = 1'b1;
+    wire VGND = 1'b0;
+    `endif
+
     // Instantiate the design under test
     tt_um_sleepy_module dut (
         .ui_in(ui_in),
@@ -28,6 +34,10 @@ module tb;
         .ena(ena),
         .clk(clk),
         .rst_n(rst_n)
+        `ifdef GL_TEST
+        ,.VPWR(VPWR),
+        .VGND(VGND)
+        `endif
     );
     
     // Dump waveforms for viewing in GTKWave

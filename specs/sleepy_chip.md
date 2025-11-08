@@ -635,10 +635,107 @@ attenuation_dB = 20 × log10(level_fraction)
 
 ---
 
+## 12. Synthesis Lessons Learned
+
+### 12.1 Critical Bug: Non-Synthesizable `initial` Blocks (2025-11-08)
+
+**Issue Discovered**: Gate-level simulation failed with undefined ('x') values, while RTL simulation passed.
+
+**Root Cause**: Used non-synthesizable `initial` block for register initialization in `spi_rx_registers.v`:
+
+```verilog
+// ❌ WRONG - Does NOT work in ASIC synthesis!
+initial begin
+    reg_control = 8'b00011100;
+    reg_freq_low = 8'h00;
+    // ... other registers
+end
+```
+
+**Why It Failed**:
+1. **RTL Simulation**: `initial` blocks execute at time 0 → ✅ Tests pass
+2. **ASIC Synthesis**: `initial` blocks are completely ignored → ❌ Registers start with 'x' values
+3. **Gate-Level Sim**: X-propagation through logic → ❌ Tests fail
+4. **Physical Chip**: Random initial states → ⚠️ Unpredictable behavior on power-up
+
+**The Fix**: Move initialization to synchronous reset clause:
+
+```verilog
+// ✅ CORRECT - Synthesizes properly for ASIC!
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        // All registers initialized here
+        reg_control <= 8'b00011100;
+        reg_freq_low <= 8'h00;
+        reg_freq_mid <= 8'h00;
+        reg_freq_high <= 8'h00;
+        reg_duty <= 8'h80;
+        reg_volume <= 8'hFF;
+        reg_stream_sample <= 8'h80;
+    end else begin
+        // Normal operation
+    end
+end
+```
+
+**Test Results**:
+- Before fix: ✅ RTL sim passes, ❌ Gate-level sim fails (OSC_RUN='x')
+- After fix: ✅ RTL sim passes, ✅ Gate-level sim passes (all 12 tests pass)
+
+### 12.2 Gate-Level Simulation Setup
+
+Gate-level simulation verifies the post-synthesis netlist using real Sky130 standard cells instead of behavioral RTL.
+
+**Setup Steps**:
+```bash
+# 1. Install volare PDK manager
+python3 -m pip install --user volare
+
+# 2. Download Sky130 PDK
+volare enable --pdk sky130 c6d73a35f524070e85faff4a6a9eef49553ebc2b
+
+# 3. Copy power netlist from GDS build
+# Use .pnl.v (with power pins), not .nl.v
+cp <gds_logs>/runs/wokwi/final/pnl/<design>.pnl.v test/gate_level_netlist.v
+
+# 4. Run gate-level simulation
+export PDK_ROOT="$HOME/.volare/volare/sky130/versions/c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+cd test && make GATES=yes
+```
+
+**Required Testbench Changes** ([test/tb.v](test/tb.v)):
+- Add power supply wires: `wire VPWR = 1'b1; wire VGND = 1'b0;` (inside `ifdef GL_TEST`)
+- Connect to DUT: `.VPWR(VPWR), .VGND(VGND)` (inside `ifdef GL_TEST`)
+
+**Required Makefile Config** ([test/Makefile](test/Makefile)):
+- Flags: `-DGL_TEST -DGL -DFUNCTIONAL -DUSE_POWER_PINS -DSIM -DUNIT_DELAY=#1`
+- Include PDK cells: `primitives.v` and `sky130_fd_sc_hd.v`
+
+**What Gets Verified**: Real Sky130 cells, post-synthesis functional correctness, reset initialization, X-propagation through gates
+
+### 12.3 Synthesis Best Practices
+
+**Prevention Checklist**:
+- [ ] No `initial` blocks in synthesizable code (testbenches only!)
+- [ ] All registers initialized in reset clause
+- [ ] RTL simulation passes all tests
+- [ ] Gate-level simulation passes all tests
+- [ ] No 'x' values after reset in gate-level sim
+- [ ] No synthesis warnings about uninitialized registers
+
+**Key Takeaways**:
+1. **Always use reset initialization** - Never rely on `initial` blocks for ASIC
+2. **Gate-level simulation is critical** - Catches issues before tapeout
+3. **RTL passing ≠ chip will work** - Always verify gate-level netlist
+4. **Test with real standard cells** - Gate-level sim uses actual Sky130 cells
+
+---
+
 ## Document Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2025-11-08 | **Critical Fix**: Fixed non-synthesizable `initial` blocks in `spi_rx_registers.v`. Moved register initialization to synchronous reset clause. Added Section 12: Synthesis Lessons Learned with gate-level simulation setup and best practices. Successfully passes both RTL and gate-level simulation (all 12 tests). |
 | 2.0 | 2025-01-08 | Updated to dual-mode synthesizer with streaming capability. Replaced smooth 8×8 multiplier volume with instant bit-shift volume (8 levels). Added streaming sample register (0x10). Updated control register for mode selection. Total: ~870 instances (63% utilization). Successfully passes GDS synthesis. |
 | 1.0 | 2025-11-08 | Initial SPI-based specification. Replaced I2C interface with SPI RX (~45 cells vs ~220). Implemented smooth 256-level volume control via 8×8 multiplier. Removed ADSR, amplitude modulator, and advanced features to fit 1×1 tile. |
 
