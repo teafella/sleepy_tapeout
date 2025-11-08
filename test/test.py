@@ -101,20 +101,20 @@ async def test_spi_synthesizer(dut):
     dut._log.info("✓ Duty cycle set to 50%")
 
     dut._log.info("\n" + "=" * 60)
-    dut._log.info("Test 5: Test volume control (slewed 8-level)")
+    dut._log.info("Test 5: Test volume control (8-level bit-shift)")
     dut._log.info("=" * 60)
 
-    # Test multiple volume target levels
-    # Note: With slewed control, actual volume ramps smoothly toward target
+    # Test multiple volume levels
+    # Note: Volume changes are instant (8 discrete levels)
     volume_levels = [0x00, 0x40, 0x80, 0xC0, 0xFF]
     volume_names = ["Mute", "1/4 vol", "1/2 vol", "3/4 vol", "Full"]
 
     for vol, name in zip(volume_levels, volume_names):
         await spi_write_register(dut, 0x06, vol)
         await Timer(2000, units="ns")
-        dut._log.info(f"  Volume target set to {name} (0x{vol:02X})")
+        dut._log.info(f"  Volume set to {name} (0x{vol:02X})")
 
-    dut._log.info("✓ Slewed volume control verified")
+    dut._log.info("✓ Bit-shift volume control verified")
 
     dut._log.info("\n" + "=" * 60)
     dut._log.info("Test 6: Test burst write (multiple registers)")

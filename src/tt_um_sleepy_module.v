@@ -138,18 +138,17 @@ module tt_um_sleepy_module (
     );
 
     // ========================================
-    // Volume Control (Slewed Bit-Shift)
+    // Volume Control (Bit-Shift)
     // ========================================
-    // AREA OPTIMIZATION: Replace 8×8 multiplier (~220 cells) with slewed bit-shift (~50 cells)
-    // Savings: ~170 cells!
+    // AREA OPTIMIZATION: Replace 8×8 multiplier (~220 cells) with bit-shift (~10 cells)
+    // Savings: ~210 cells!
     //
     // Features:
     // - 8 discrete volume levels (using bit-shifts)
-    // - Smooth transitions via slew rate limiter (no audio clicks)
-    // - Target volume set via SPI (reg_volume: 0-255)
-    // - Current volume smoothly ramps toward target
+    // - Instant volume changes (SPI write directly controls output)
+    // - Volume set via SPI (reg_volume: 0-255)
     //
-    // Volume levels (based on top 3 bits):
+    // Volume levels (based on top 3 bits of reg_volume):
     //   0: Mute (0-31)
     //   1: 1/8 volume (32-63)
     //   2: 1/4 volume (64-95)
@@ -159,39 +158,13 @@ module tt_um_sleepy_module (
     //   6: 3/4 volume (192-223)
     //   7: Full volume (224-255)
 
-    // Slew rate configuration
-    // Higher value = slower fade (smoother but slower response)
-    // At 50 MHz: SLEW_RATE=2048 gives ~24ms for full 0-255 range
-    localparam SLEW_RATE = 16'd2048;
-
-    reg [7:0] current_volume;   // Smoothly interpolated volume level
-    reg [15:0] slew_counter;    // Counter for slew rate timing
-
-    // Slew rate limiter: gradually transition current_volume toward target (reg_volume)
-    always @(posedge clk or negedge system_rst_n) begin
-        if (!system_rst_n) begin
-            current_volume <= 8'd0;
-            slew_counter <= 16'd0;
-        end else begin
-            slew_counter <= slew_counter + 1;
-
-            // Update current volume toward target every SLEW_RATE clocks
-            if (slew_counter == SLEW_RATE) begin
-                if (current_volume < reg_volume)
-                    current_volume <= current_volume + 1;
-                else if (current_volume > reg_volume)
-                    current_volume <= current_volume - 1;
-            end
-        end
-    end
-
-    // Bit-shift volume scaling based on current volume level
+    // Bit-shift volume scaling based on volume register
     reg [7:0] volume_scaled;
     always @(posedge clk or negedge system_rst_n) begin
         if (!system_rst_n) begin
             volume_scaled <= 8'h00;
         end else begin
-            case (current_volume[7:5])  // Use top 3 bits for 8 discrete levels
+            case (reg_volume[7:5])  // Use top 3 bits for 8 discrete levels
                 3'd0: volume_scaled <= 8'h00;                                    // Mute
                 3'd1: volume_scaled <= mixed_wave >> 3;                          // 1/8 volume
                 3'd2: volume_scaled <= mixed_wave >> 2;                          // 1/4 volume
